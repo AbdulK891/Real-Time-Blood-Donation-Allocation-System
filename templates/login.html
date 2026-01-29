@@ -1,0 +1,555 @@
+<!-- templates/login.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BLOOD BRIDGE • Home & Sign in</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg-teal-dark: #0b3536;
+      --bg-teal-light: #e6fbff;
+      --card-bg: #ffffff;
+      --card-border: #c3e4e7;
+      --accent: #0f9da5;
+      --accent-dark: #076a70;
+      --text-main: #062222;
+      --text-muted: #5c7b7f;
+      --feature-bg: #f7feff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text-main);
+      background: radial-gradient(900px 900px at -10% -10%, #ffffff 0%, #d2f7fb 45%, #0b3536 100%);
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* PAGE SHELL */
+    .page-shell {
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      padding: 32px;
+      flex: 1 0 auto;
+    }
+
+    /* LEFT CONTENT COLUMN */
+    .content-left {
+      flex: 1;
+      padding-right: 60px; /* Clean gap before login box */
+    }
+
+    .content-inner {
+      width: 100%;
+      max-width: 900px;   /* prevents overlap with login box */
+    }
+
+    /* Ensure images NEVER overflow the safe width */
+    .content-inner img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* HEADER / LOGO */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .top-bar-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .top-bar-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .top-bar-text-main {
+      font-size: 18px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #043435;
+    }
+
+    .top-bar-text-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* HERO TITLE */
+    .hero-title {
+      font-size: clamp(34px, 4vw, 44px);
+      font-weight: 800;
+      line-height: 1.1;
+      margin: 10px 0 18px 0;
+      color: #022021;
+    }
+
+    .hero-chunk {
+      opacity: 0;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    /* HERO WORD-BY-WORD FADE (q1 = B) */
+    .hero-title.ready .hero-chunk:nth-child(1) {
+      animation: fadeIn 0.6s ease-out forwards 0s;
+    }
+    .hero-title.ready .hero-chunk:nth-child(2) {
+      animation: fadeIn 0.6s ease-out forwards 0.3s;
+    }
+    .hero-title.ready .hero-chunk:nth-child(3) {
+      animation: fadeIn 0.6s ease-out forwards 0.6s;
+    }
+
+    /* POSTER IMAGE */
+    .hero-poster {
+      border-radius: 24px;
+      overflow: hidden;
+      background: #ffffff;
+      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.18);
+    }
+
+    .hero-poster img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    /* MISSION SECTION */
+    .hero-mission-wrap {
+      margin-top: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 22px 26px;
+      border: 1px solid rgba(179, 237, 241, 0.9);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+    }
+
+    .hero-mission-title {
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--accent-dark);
+      margin-bottom: 6px;
+    }
+
+    .hero-mission-text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text-main);
+    }
+
+    /* DONOR IMAGE CARD */
+    .donor-card {
+      margin-top: 26px;
+      background: #fff;
+      border-radius: 24px;
+      padding: 12px;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+    }
+
+    .donor-card img {
+      width: 100%;
+      display: block;
+      border-radius: 18px;
+      object-fit: cover;
+    }
+
+    .donor-caption {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* FEATURES */
+    .features-section {
+      margin-top: 28px;
+    }
+
+    .features-heading {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #032727;
+    }
+
+    .feature-track {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      padding-bottom: 6px;
+      scroll-snap-type: x mandatory;
+    }
+
+    .feature-card {
+      min-width: 220px;
+      max-width: 260px;
+      background: var(--feature-bg);
+      border-radius: 18px;
+      padding: 18px;
+      border: 1px solid rgba(168, 220, 226, 0.9);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+      flex-shrink: 0;
+      scroll-snap-align: start;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+    }
+
+    /* Hover elevation (+ subtle animation, q3 = A) */
+    .feature-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 30px rgba(0, 0, 0, 0.16);
+      background-color: #ffffff;
+    }
+
+    .feature-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #043637;
+    }
+
+    .feature-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    /* LOGIN BOX (RIGHT FIXED, CENTERED WITHIN RIGHT SIDE) */
+    .login-fixed {
+      position: fixed;
+      right: 80px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 320px;
+      background: var(--card-bg);
+      border-radius: 22px;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      z-index: 10;
+      animation: breathe 7s ease-in-out infinite;
+      animation-delay: 0.8s;
+    }
+
+    .login-heading {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .login-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #c8e3e6;
+      background: #f7feff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(15, 157, 165, 0.24);
+      background: #ffffff;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 11px 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .login-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* FOOTER */
+    .footer {
+      width: 100%;
+      padding: 24px 0;
+      margin-top: 40px;
+      background: rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(4px);
+      text-align: center;
+      color: #e9f9fa;
+      opacity: 0;
+      transform: translateY(16px);
+    }
+
+    .footer p {
+      margin: 4px 0;
+      font-size: 14px;
+      color: #d8f4f5;
+    }
+
+    .footer.visible {
+      animation: footerFadeUp 0.8s ease-out forwards;
+    }
+
+    /* ANIMATION BASE (scroll-triggered) */
+    [data-animate] {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+
+    [data-animate].visible {
+      animation: fadeUp 0.8s ease-out forwards;
+    }
+
+    [data-animate="pop"].visible {
+      animation: popIn 0.75s ease-out forwards;
+    }
+
+    /* KEYFRAMES */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.94);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes footerFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes breathe {
+      0% {
+        transform: translateY(-50%) scale(1);
+      }
+      50% {
+        transform: translateY(-50%) scale(1.015);
+      }
+      100% {
+        transform: translateY(-50%) scale(1);
+      }
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 960px) {
+      .login-fixed {
+        position: static;
+        transform: none;
+        margin-top: 30px;
+        width: 100%;
+        max-width: 420px;
+        animation: none; /* avoid weird scaling on mobile */
+      }
+      .content-left {
+        padding-right: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page-shell">
+    <div class="content-left">
+      <div class="content-inner">
+
+        <!-- HEADER -->
+        <header class="top-bar" data-animate>
+          <div class="top-bar-logo">
+            <img src="{{ url_for('static', filename='images/corner.png') }}">
+          </div>
+          <div>
+            <div class="top-bar-text-main">BloodBridge</div>
+            <div class="top-bar-text-sub">Connecting donors, hospitals, and families when seconds matter.</div>
+          </div>
+        </header>
+
+        <!-- HERO TITLE (word-by-word fade) -->
+        <h1 class="hero-title" id="hero-title">
+          <span class="hero-chunk">One Donation.</span>
+          <span class="hero-chunk">One Connection.</span>
+          <span class="hero-chunk">One Saved Life.</span>
+        </h1>
+
+        <!-- POSTER -->
+        <div class="hero-poster" data-animate>
+          <img src="{{ url_for('static', filename='images/above.png') }}">
+        </div>
+
+        <!-- MISSION -->
+        <section class="hero-mission-wrap" data-animate>
+          <div class="hero-mission-title">The Heart Behind BloodBridge</div>
+          <p class="hero-mission-text">
+            Every donation has the power to change someone’s life, but only when it reaches the patient on time.
+            BloodBridge bridges that gap by connecting donors, hospitals, and families in moments when seconds matter.
+            Our mission is simple: make lifesaving blood accessible, reliable, and immediate. With every match we make, hope becomes real.
+          </p>
+        </section>
+
+        <!-- DONOR IMAGE -->
+        <section class="donor-card" data-animate="pop">
+          <img src="{{ url_for('static', filename='images/mid.png') }}">
+          <div class="donor-caption">A BloodBridge donor turning a simple act of kindness into a life-saving connection.</div>
+        </section>
+
+        <!-- FEATURES -->
+        <section class="features-section" data-animate>
+          <div class="features-heading">Built to make blood donation faster, safer, and smarter.</div>
+
+          <div class="feature-track">
+            <article class="feature-card">
+              <div class="feature-title">Smart Matching</div>
+              <div class="feature-text">Instantly connects donors with patients based on blood type, urgency, and proximity.</div>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-title">Emergency Alerts</div>
+              <div class="feature-text">Nearby eligible donors receive instant notifications during critical shortages.</div>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-title">Verified Network</div>
+              <div class="feature-text">Secure, authenticated system ensures all users operate in a trusted environment.</div>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-title">Donor Journey</div>
+              <div class="feature-text">Track your donation history, eligibility, and the impact you create.</div>
+            </article>
+
+            <article class="feature-card">
+              <div class="feature-title">Hospital Tools</div>
+              <div class="feature-text">Submit requests, monitor donor responses, and manage inventory efficiently.</div>
+            </article>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- LOGIN FIXED -->
+    <aside class="login-fixed">
+      <h2 class="login-heading">Sign in</h2>
+      <p class="login-sub">Access your BloodBridge dashboard.</p>
+
+      <form method="POST" action="{{ url_for('login') }}">
+        <label>Username</label>
+        <input type="text" name="username" required />
+
+        <label>Password</label>
+        <input type="password" name="password" required />
+
+        <button class="btn-primary">LOGIN</button>
+      </form>
+
+      <div class="login-hint">Need access? Contact your administrator.</div>
+    </aside>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer" id="footer">
+    <p>© 2025 BloodBridge. All rights reserved.</p>
+    <p>BloodBridge connects donors, hospitals, and families when seconds matter.</p>
+    <p>Contact: support@bloodbridge.org</p>
+  </footer>
+
+  <!-- ANIMATION SCRIPT -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Hero title word-by-word fade (q1 = B)
+      const heroTitle = document.getElementById('hero-title');
+      if (heroTitle) {
+        heroTitle.classList.add('ready');
+      }
+
+      // IntersectionObserver for scroll-based animations
+      const animatedElems = document.querySelectorAll('[data-animate]');
+      const footer = document.getElementById('footer');
+
+      const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            obs.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+
+      animatedElems.forEach(el => observer.observe(el));
+      if (footer) observer.observe(footer);
+
+      // Very subtle parallax background (q2 = A)
+      const body = document.body;
+      window.addEventListener('scroll', () => {
+        const offset = window.scrollY * 0.05; // subtle depth
+        body.style.backgroundPosition = `0px ${-offset}px`;
+      }, { passive: true });
+    });
+  </script>
+</body>
+</html>

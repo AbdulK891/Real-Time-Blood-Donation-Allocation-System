@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  db:
+    image: timescale/timescaledb:2.21.2-pg16
+    container_name: bloodbridge-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: abc123
+      POSTGRES_DB: bloodbridge
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/00-init.sql
+      - ./bloodbridge_full.dump:/backup/bloodbridge_full.dump
+      - ./data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: bloodbridge-web
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://postgres:abc123@db:5432/bloodbridge
+      SECRET_KEY: abc1234
+      EMAIL_HOST: smtp.gmail.com
+      EMAIL_PORT: 587
+      EMAIL_USER: abdulkhayyum.981@gmail.com
+      EMAIL_PASSWORD: tfuutmegncwadshr
+      EMAIL_USE_TLS: 1
+    ports:
+      - "5000:5000"

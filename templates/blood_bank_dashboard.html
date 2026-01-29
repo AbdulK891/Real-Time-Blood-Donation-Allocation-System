@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block content %}
+<h3>Blood Bank Dashboard - {{ blood_bank['name'] }}</h3>
+<hr>
+
+<h5>Inventory</h5>
+<table class="table table-striped">
+    <tr><th>Blood Type</th><th>Units</th><th>Last Updated</th></tr>
+    {% for row in inventory %}
+    <tr><td>{{ row['blood_type'] }}</td><td>{{ row['units'] }}</td><td>{{ row['last_updated'] }}</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

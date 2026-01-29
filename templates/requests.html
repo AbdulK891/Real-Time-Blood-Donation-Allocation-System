@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Blood Requests • Org {{ org }}</title>
+  <style>
+    :root {
+      --page-bg: #f4f7fb;
+      --sidebar-gradient-start: #4f8bfd;
+      --sidebar-gradient-mid: #3b82f6;
+      --sidebar-gradient-end: #1d4ed8;
+
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --card-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+
+      --text-main: #0b1220;
+      --text-muted: #64748b;
+      --pill-bg: #e5f0ff;
+      --pill-border: #c3d5ff;
+      --pill-text: #1d4ed8;
+
+      --line-soft: #e5e7eb;
+
+      --btn-gradient-start: #2563eb;
+      --btn-gradient-end: #1d4ed8;
+      --btn-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--page-bg);
+      color: var(--text-main);
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* SIDEBAR */
+
+    .sidebar {
+      width: 230px;
+      background: linear-gradient(180deg,
+          var(--sidebar-gradient-start),
+          var(--sidebar-gradient-mid),
+          var(--sidebar-gradient-end));
+      color: #f9fbff;
+      padding: 24px 18px;
+      box-shadow: 10px 0 35px rgba(15, 23, 42, 0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .sidebar-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 18px;
+    }
+
+    .sidebar-title {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #e5edff;
+      margin-bottom: 4px;
+    }
+
+    .sidebar-sub {
+      text-align: center;
+      font-size: 12px;
+      color: rgba(226, 232, 240, 0.9);
+      margin-bottom: 10px;
+    }
+
+    .sidebar-btn {
+      display: block;
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 9999px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease;
+      background: linear-gradient(135deg, var(--btn-gradient-start), var(--btn-gradient-end));
+      box-shadow: var(--btn-shadow);
+      color: #f9fbff;
+    }
+
+    .sidebar-btn.secondary {
+      background: rgba(15, 23, 42, 0.22);
+      box-shadow: none;
+      border: 1px solid rgba(226, 232, 240, 0.25);
+    }
+
+    .sidebar-btn span.icon {
+      margin-right: 6px;
+      opacity: 0.9;
+    }
+
+    .sidebar-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.45);
+    }
+
+    .sidebar-btn.secondary:hover {
+      background: rgba(15, 23, 42, 0.32);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.45);
+    }
+
+    /* MAIN */
+
+    .main {
+      flex: 1;
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .page-header {
+      margin-bottom: 4px;
+    }
+
+    .page-header h1 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .page-header-sub {
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* CARDS */
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--card-shadow);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+
+    .card h3 {
+      margin: 0 0 10px 0;
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card h4 {
+      margin: 16px 0 8px 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .card-subtext {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .card-filters {
+      background: #e7f0ff;
+      border-color: #d0ddff;
+    }
+
+    /* FLASH MESSAGES */
+
+    .flash-container {
+      margin-top: 4px;
+      margin-bottom: 6px;
+    }
+
+    .flash-msg {
+      padding: 9px 11px;
+      border-radius: 12px;
+      font-size: 13px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flash-success {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #4ade80;
+    }
+
+    .flash-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    /* FILTERS */
+
+    .filters {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      margin-top: 4px;
+    }
+
+    .filters label {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .filters input[type="text"],
+    .filters select {
+      min-width: 180px;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
+      background: #ffffff;
+      border: 1px solid #d4ddf0;
+      color: var(--text-main);
+      border-radius: 9px;
+      padding: 7px 9px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    select:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35);
+      background: #ffffff;
+    }
+
+    .filters-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 3px;
+    }
+
+    /* BUTTONS */
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: linear-gradient(135deg, var(--btn-gradient-start), var(--btn-gradient-end));
+      color: #f9fbff;
+      padding: 7px 14px;
+      border-radius: 9999px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: var(--btn-shadow);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.45);
+    }
+
+    .btn-outline {
+      background: #ffffff;
+      color: #1d4ed8;
+      border: 1px solid #c3d5ff;
+      box-shadow: none;
+    }
+
+    .btn-outline:hover {
+      background: #eef3ff;
+      box-shadow: 0 8px 20px rgba(148, 163, 184, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-small {
+      padding: 5px 11px;
+      font-size: 12px;
+      border-radius: 9999px;
+    }
+
+    form.inline {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    /* TABLES */
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line-soft);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    tbody tr:hover {
+      background: #f3f6ff;
+    }
+
+    .muted {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      background: var(--pill-bg);
+      border-radius: 9999px;
+      border: 1px solid var(--pill-border);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--pill-text);
+      white-space: nowrap;
+    }
+
+    /* STATUS COLORS */
+
+    .ok {
+      color: #15803d;
+      font-weight: 500;
+    }
+
+    .warn {
+      color: #ea580c;
+      font-weight: 500;
+    }
+
+    .low {
+      color: #b91c1c;
+      font-weight: 500;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 9999px;
+      font-size: 12px;
+    }
+
+    .status-open {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    .status-partial {
+      background: #fffbeb;
+      color: #92400e;
+      border: 1px solid #fed7aa;
+    }
+
+    .status-fulfilled {
+      background: #ecfdf3;
+      color: #166534;
+      border: 1px solid #4ade80;
+    }
+
+    /* SUBSECTION (inside Your Submitted Requests) */
+
+    .subsection {
+      margin-top: 10px;
+      padding-top: 4px;
+    }
+
+    .subsection:not(:last-child) {
+      border-bottom: 1px dashed #d4dde8;
+      padding-bottom: 12px;
+      margin-bottom: 8px;
+    }
+
+    .subsection-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0 0 6px 0;
+    }
+
+    /* RESPONSIVE */
+
+    @media (max-width: 960px) {
+      .layout {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        flex-direction: row;
+        justify-content: center;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35);
+      }
+
+      .sidebar-inner {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .sidebar-title,
+      .sidebar-sub {
+        text-align: left;
+      }
+
+      .sidebar-title {
+        margin-bottom: 0;
+      }
+
+      .main {
+        padding: 18px 16px 28px 16px;
+      }
+    }
+  </style>
+</head>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <script>
+      {% for category, message in messages %}
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "{{ message }}",
+          confirmButtonColor: "#7c3aed"
+        });
+      {% endfor %}
+    </script>
+  {% endif %}
+{% endwith %}
+
+
+<body>
+  <div class="layout">
+    <!-- COMPACT SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-inner">
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+          <div class="sidebar-title">Blood Requests</div>
+          <div class="sidebar-sub">Org {{ org }}</div>
+          <a href="{{ url_for('new_request') }}" class="sidebar-btn" style="margin-top:10px;">
+            <span class="icon">＋</span>
+            <span>New Request</span>
+          </a>
+          <a href="{{ url_for('dashboard') }}" class="sidebar-btn secondary" style="margin-top:8px;">
+            <span class="icon">←</span>
+            <span>Back to Dashboard</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+      <div class="page-header">
+        <h1>Blood Requests</h1>
+        <div class="page-header-sub">
+          Filter, accept, and monitor hospital, blood bank, and donor requests in one place.
+        </div>
+      </div>
+
+      <!-- FLASH MESSAGES -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="flash-msg {{ 'flash-success' if category == 'success' else 'flash-error' }}">
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <!-- FILTER BAR -->
+      <form method="get" class="card card-filters">
+        <h3>Filters</h3>
+        <p class="card-subtext">Use filters to narrow down requests across hospitals, banks, and donors.</p>
+        <div class="filters">
+          <label>
+            Search
+            <input type="text" name="q" placeholder="Hospital / city / state / blood / component"
+                   value="{{ filters.q if filters else '' }}" style="min-width:240px;">
+          </label>
+          <label>
+            Blood Type
+            <select name="blood_type">
+              <option value="">Any</option>
+              {% for bt in ['O+','O-','A+','A-','B+','B-','AB+','AB-'] %}
+              <option value="{{ bt }}" {% if filters and filters.blood_type==bt %}selected{% endif %}>{{ bt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Component
+            <select name="component">
+              <option value="">Any</option>
+              {% for c in ['RBC','PLASMA','PLATELETS','WHOLE'] %}
+              <option value="{{ c }}" {% if filters and filters.component==c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Status
+            <select name="status">
+              <option value="">Any</option>
+              {% for s in ['OPEN','CLAIMED','PARTIAL','FULFILLED','REJECTED'] %}
+              <option value="{{ s }}" {% if filters and filters.status==s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <div class="filters-actions">
+            <button class="btn btn-small" type="submit">
+              Apply
+            </button>
+            <a class="btn btn-small btn-outline" href="{{ url_for('view_requests') }}">
+              Reset
+            </a>
+          </div>
+        </div>
+      </form>
+
+      <!-- BANK view: All hospital requests -->
+      {% if role == 'BloodBank' %}
+      <div class="card">
+        <h3>All Hospital Requests</h3>
+        <p class="card-subtext">Requests created by hospitals that your blood bank can fulfill.</p>
+        {% if all_hospital_requests %}
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Hospital</th>
+              <th>Location</th>
+              <th>Blood Type</th>
+              <th>Component</th>
+              <th>Units Remaining</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in all_hospital_requests %}
+            <tr>
+              <td>{{ r.request_id }}</td>
+              <td>{{ r.hospital_name or r.hospital_id }}</td>
+              <td>{{ r.city }}, {{ r.state }}</td>
+              <td><span class="pill">{{ r.blood_type }}</span></td>
+              <td><span class="pill">{{ r.component }}</span></td>
+              <td>{{ r.units }}</td>
+              <td>
+                {% if r.status == 'FULFILLED' %}
+                <span class="ok">{{ r.status }}</span>
+                {% elif r.status in ['OPEN','CLAIMED','PARTIAL'] %}
+                <span class="warn">{{ r.status }}</span>
+                {% else %}
+                <span class="low">{{ r.status }}</span>
+                {% endif %}
+              </td>
+              <td>{{ r.created_at }}</td>
+              <td>
+                {% set can_act = (r.status in ['OPEN','CLAIMED','PARTIAL']) and (r.my_bank_state != 'REJECTED') %}
+                {% if can_act %}
+                <form class="inline" method="post" action="{{ url_for('accept_request', request_id=r.request_id) }}">
+                  <input type="number" name="units" min="1" max="{{ r.units }}" value="{{ r.units }}" style="width:70px;">
+                  <button class="btn btn-small" type="submit">Accept</button>
+                </form>
+                <form class="inline" method="post" action="{{ url_for('reject_request', request_id=r.request_id) }}">
+                  <input type="text" name="note" placeholder="reason (optional)" style="width:10rem;">
+                  <button class="btn btn-small btn-outline" type="submit">Reject</button>
+                </form>
+                {% else %}
+                <span class="muted">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="muted">No matching hospital requests.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- HOSPITAL view: Incoming from peers -->
+      {% if role == 'Hospital' and incoming_peer_requests %}
+      <div class="card">
+        <h3>Incoming Requests from Nearby Hospitals</h3>
+        <p class="card-subtext">Peer-to-peer requests from hospitals near you.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Hospital</th>
+              <th>Location</th>
+              <th>Blood Type</th>
+              <th>Component</th>
+              <th>Units Remaining</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in incoming_peer_requests %}
+            <tr>
+              <td>{{ r.request_id }}</td>
+              <td>{{ r.hospital_name }}</td>
+              <td>{{ r.city }}, {{ r.state }}</td>
+              <td><span class="pill">{{ r.blood_type }}</span></td>
+              <td><span class="pill">{{ r.component }}</span></td>
+              <td>{{ r.units }}</td>
+              <td>
+                {% if r.status == 'FULFILLED' %}
+                <span class="status-pill status-fulfilled">✓ Fulfilled</span>
+                {% elif r.status == 'PARTIAL' %}
+                <span class="status-pill status-partial">⚠ Partial</span>
+                {% else %}
+                <span class="status-pill status-open">○ Open</span>
+                {% endif %}
+              </td>
+              <td>{{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else 'N/A' }}</td>
+              <td>
+                <form class="inline" method="post" action="{{ url_for('accept_request', request_id=r.request_id) }}">
+                  <input type="number" name="units" min="1" max="{{ r.units }}" value="{{ r.units }}" style="width:60px;">
+                  <button class="btn btn-small" type="submit">Accept</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      <!-- DONOR view: Incoming requests -->
+      {% if role == 'Donor' and incoming_donor_requests %}
+      <div class="card">
+        <h3>Urgent Requests Nearby</h3>
+        <p class="card-subtext">Hospitals near you with urgent need for your blood type.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Hospital</th>
+              <th>Distance</th>
+              <th>Blood Type</th>
+              <th>Units Needed</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in incoming_donor_requests %}
+            <tr>
+              <td>{{ r.request_id }}</td>
+              <td>{{ r.hospital_name }}</td>
+              <td>{{ "%.1f"|format(r.distance_km) }} km</td>
+              <td><span class="pill">{{ r.blood_type }}</span></td>
+              <td>{{ r.units }}</td>
+              <td>
+                <form class="inline" method="post" action="{{ url_for('donor_accept_request', request_id=r.request_id) }}">
+                  <button class="btn btn-small" type="submit">Donate 1 Unit</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      <!-- My org's own requests: split into Emergency/Urgent vs Blood Drive (no Track) -->
+      <div class="card">
+        <h3>Your Submitted Requests</h3>
+        {% if requests %}
+        <!-- Emergency / Urgent (Level 1) -->
+        <div class="subsection">
+          <h4>Emergency &amp; Urgent Requests</h4>
+          <p class="subsection-hint">
+            These are high-priority requests (emergency or urgency level 1). Tracking is available.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Blood Type</th>
+                <th>Component</th>
+                <th>Units Remaining</th>
+                <th>Urgency</th>
+                <th>Status</th>
+                <th>Accepted By</th>
+                <th>Note</th>
+                <th>Updated</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in requests %}
+              {% if r.level in [1, '1', 'EMERGENCY', 'Emergency', 'URGENT', 'Urgent'] %}
+              <tr>
+                <td>{{ r.request_id }}</td>
+                <td><span class="pill">{{ r.blood_type }}</span></td>
+                <td><span class="pill">{{ r.component }}</span></td>
+                <td>{{ r.units }}</td>
+                <td>{{ r.level or '—' }}</td>
+                <td>
+                  {% if r.status == 'FULFILLED' %}
+                  <span class="ok">{{ r.status }}</span>
+                  {% elif r.status in ['OPEN','CLAIMED','PARTIAL'] %}
+                  <span class="warn">{{ r.status }}</span>
+                  {% else %}
+                  <span class="low">{{ r.status }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ r.accepted_by_bank_id or '—' }}</td>
+                <td>{{ r.decision_note or '—' }}</td>
+                <td>{{ r.decision_at or r.created_at }}</td>
+                <td>
+                  <a class="btn btn-small" href="{{ url_for('track_request', request_id=r.request_id) }}">Track</a>
+                </td>
+              </tr>
+              {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Blood Drive Requests (Level 2, no Track) -->
+        <div class="subsection">
+          <h4>Blood Drive Requests</h4>
+          <p class="subsection-hint">
+            These are blood drive or scheduled requests (urgency level 2). Tracking is not required.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Blood Type</th>
+                <th>Component</th>
+                <th>Units Remaining</th>
+                <th>Urgency</th>
+                <th>Status</th>
+                <th>Accepted By</th>
+                <th>Note</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in requests %}
+              {% if r.level in [2, '2', 'BLOOD_DRIVE', 'Blood Drive', 'Blood drive'] %}
+              <tr>
+                <td>{{ r.request_id }}</td>
+                <td><span class="pill">{{ r.blood_type }}</span></td>
+                <td><span class="pill">{{ r.component }}</span></td>
+                <td>{{ r.units }}</td>
+                <td>{{ r.level or '—' }}</td>
+                <td>
+                  {% if r.status == 'FULFILLED' %}
+                  <span class="ok">{{ r.status }}</span>
+                  {% elif r.status in ['OPEN','CLAIMED','PARTIAL'] %}
+                  <span class="warn">{{ r.status }}</span>
+                  {% else %}
+                  <span class="low">{{ r.status }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ r.accepted_by_bank_id or '—' }}</td>
+                <td>{{ r.decision_note or '—' }}</td>
+                <td>{{ r.decision_at or r.created_at }}</td>
+              </tr>
+              {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="muted">No matching requests.</p>
+        {% endif %}
+      </div>
+
+      {% if role == 'BloodBank' %}
+      <div class="card">
+        <h3>Requests Fulfilled by Your Bank</h3>
+        <p class="card-subtext">Completed fulfillment transactions issued from your blood bank.</p>
+        {% if fulfilled %}
+        <table>
+          <thead>
+            <tr>
+              <th>Txn ID</th>
+              <th>Request ID</th>
+              <th>Hospital</th>
+              <th>Blood Type</th>
+              <th>Component</th>
+              <th>Units</th>
+              <th>Level</th>
+              <th>Fulfilled At</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in fulfilled %}
+            <tr>
+              <td>{{ f.transaction_id }}</td>
+              <td>{{ f.request_id }}</td>
+              <td>{{ f.hospital }}</td>
+              <td>{{ f.blood_type }}</td>
+              <td>{{ f.component }}</td>
+              <td>{{ f.units_fulfilled }}</td>
+              <td>{{ f.level or '—' }}</td>
+              <td>{{ f.fulfilled_at }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="muted">No fulfillments yet.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </main>
+  </div>
+</body>
+
+</html>

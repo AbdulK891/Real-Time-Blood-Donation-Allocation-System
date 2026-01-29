@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block content %}
+<h3>Transfers History</h3>
+<hr>
+<table class="table table-hover table-sm">
+    <tr><th>Date</th><th>From</th><th>To</th><th>Blood Type</th><th>Units</th></tr>
+    {% for t in transfers %}
+    <tr>
+        <td>{{ t['transfer_date'] }}</td>
+        <td>{{ t['donor_name'] or t['blood_bank_name'] or 'N/A' }}</td>
+        <td>{{ t['hospital_name'] or 'N/A' }}</td>
+        <td>{{ t['blood_type'] }}</td>
+        <td>{{ t['units'] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

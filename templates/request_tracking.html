@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Request Tracking - {{ request_id }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+  <style>
+    :root {
+      --bg-page: #0f172a;
+      /* dark navy */
+      --bg-panel: #e5edf7;
+      /* soft light blue/gray */
+      --bg-card: #ffffff;
+      /* white cards */
+      --border-soft: #d0d7e6;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent-blue: #2563eb;
+      --accent-blue-soft: #eff6ff;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-yellow: #facc15;
+      --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.20);
+      --radius-lg: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system;
+      background: var(--bg-page);
+      color: var(--text-main);
+    }
+
+    /* Remove Leaflet default white box behind custom divIcons */
+    .leaflet-marker-icon,
+    .leaflet-marker-shadow {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    /* ---------- LAYOUT: MAP LEFT, PANELS RIGHT ---------- */
+
+    .page-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* LEFT COLUMN */
+    .map-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-panel);
+      padding: 18px 18px 8px 18px;
+    }
+
+    /* MAP CARD WRAPPER */
+    .map-card {
+      flex: 1;
+      /* take all available height */
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--border-soft);
+      overflow: hidden;
+      /* hide Leaflet edges in rounded card */
+    }
+
+    /* MAP itself inside the card */
+    #map {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      border-right: 1px solid rgba(148, 163, 184, 0.5);
+    }
+
+    /* FOOTER under the map card */
+    .map-footer {
+      height: 56px;
+      /* short footer */
+      display: flex;
+      align-items: flex-end;
+      /* button sits on bottom edge */
+      justify-content: flex-start;
+      /* left side */
+      padding: 0 0 14px 4px;
+      /* tiny bottom gap */
+    }
+
+    /* Back Button Style (light theme) */
+    .back-btn {
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      border: 1px solid #cbd5e1;
+      background: #0f172a;
+      color: #e5e7eb;
+      text-decoration: none;
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.55);
+    }
+
+    .back-btn:hover {
+      background: #111827;
+      color: #bfdbfe;
+    }
+
+    /* ---------- RIGHT COLUMN ---------- */
+
+    .right-column {
+      width: 480px;
+      min-width: 380px;
+      max-width: 520px;
+      background: var(--bg-panel);
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--border-soft);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tracking-card {
+      flex: 0 0 auto;
+    }
+
+    .history-card {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    /* ---------- RADAR SEARCH ANIMATION ---------- */
+
+    .radar-container {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      pointer-events: none;
+    }
+
+    .radar-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 40px;
+      height: 40px;
+      border: 2px solid rgba(37, 99, 235, 0.45);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: radarPulse 2.4s infinite ease-out;
+    }
+
+    .radar-ring:nth-child(2) {
+      animation-delay: 0.5s;
+    }
+
+    .radar-ring:nth-child(3) {
+      animation-delay: 1s;
+    }
+
+    @keyframes radarPulse {
+      0% {
+        width: 0px;
+        height: 0px;
+        opacity: 0.8;
+      }
+
+      70% {
+        opacity: 0.25;
+      }
+
+      100% {
+        width: 220px;
+        height: 220px;
+        opacity: 0;
+      }
+    }
+
+    /* Center glowing dot */
+    .radar-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 18px;
+      height: 18px;
+      background: #2563eb;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 12px rgba(37, 99, 235, 0.9);
+    }
+
+    /* Floating Search Label */
+    .search-float-label {
+      position: absolute;
+      top: -28px;
+      left: 30px;
+      background: rgba(15, 23, 42, 0.80);
+      backdrop-filter: blur(10px);
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: #f1f5f9;
+      white-space: nowrap;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+      animation: fadeFloat 2.2s infinite ease-in-out;
+    }
+
+    @keyframes fadeFloat {
+      0% {
+        opacity: 0.4;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.4;
+      }
+    }
+
+    /* --- FIX TIMER STYLE (Restore big centered timer) --- */
+    .timer {
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--accent-red);
+      text-align: center;
+      margin-top: 6px;
+      margin-bottom: 2px;
+    }
+
+    .timer-caption {
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    /* ---------- SHIFT PATH ---------- */
+
+    .level-indicator {
+      display: flex;
+      justify-content: space-between;
+      align-items: stretch;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 12px;
+      background: var(--accent-blue-soft);
+      border: 1px solid #dbeafe;
+      margin-top: 4px;
+    }
+
+    .level-step {
+      flex: 1;
+      text-align: center;
+      padding: 6px 4px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      transition: all 0.25s ease;
+    }
+
+    .level-step .icon {
+      font-size: 18px;
+    }
+
+    .level-step.active {
+      background: #1d4ed8;
+      color: #f9fafb;
+      opacity: 1;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.4);
+    }
+
+    .level-step.active .icon {
+      transform: translateY(-1px);
+    }
+
+    .request-status-label {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .request-status-label span {
+      font-weight: 600;
+      color: var(--accent-green);
+    }
+
+    /* ---------- RIGHT / HISTORY PANEL ---------- */
+
+    .right-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .stat-row {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .stat-box {
+      flex: 1;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    .stat-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--text-muted);
+    }
+
+    .stat-value-main {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent-blue);
+    }
+
+    .reach-box {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .reach-row {
+      padding: 6px 0;
+      border-top: 1px solid #d1d5db;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .reach-row:first-of-type {
+      border-top: none;
+      padding-top: 2px;
+    }
+
+    .reach-count {
+      font-weight: 600;
+      min-width: 20px;
+      text-align: right;
+      color: var(--accent-blue);
+    }
+
+    .reach-label {
+      flex: 1;
+    }
+
+    .reach-pending {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ---------- ACTIVITY TABLE ---------- */
+
+    .activity-wrapper {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      background: #f9fafb;
+    }
+
+    table.activity-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    table.activity-table thead {
+      background: #e5edf7;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    table.activity-table th,
+    table.activity-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    table.activity-table th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    table.activity-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .activity-time {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .activity-stage {
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .activity-status-fulfilled {
+      color: var(--accent-green);
+      font-weight: 600;
+    }
+
+    .activity-status-partial {
+      color: var(--accent-yellow);
+      font-weight: 600;
+    }
+
+    .activity-empty-row td {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 16px 10px;
+    }
+
+    /* ---------- MAP LABELS & DONOR PULSE (legacy, harmless) ---------- */
+
+    .marker-label {
+      background: white;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 2px 4px;
+      font-weight: bold;
+      font-size: 12px;
+      color: black;
+      white-space: nowrap;
+    }
+
+    .bank-label {
+      border-color: red;
+      color: red;
+    }
+
+    .donor-pulse-icon .donor-pulse-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: #2563eb;
+      box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6);
+      animation: donorPulse 1.6s infinite ease-out;
+    }
+
+    @keyframes donorPulse {
+      0% {
+        transform: scale(0.8);
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+      }
+
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 18px rgba(37, 99, 235, 0);
+      }
+
+      100% {
+        transform: scale(0.8);
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+      }
+    }
+
+    .donor-search-label {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #e5e7eb;
+      font-size: 11px;
+      white-space: nowrap;
+      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.45);
+    }
+
+    @media (max-width: 960px) {
+      .page-layout {
+        flex-direction: column;
+      }
+
+      .right-column {
+        width: 100%;
+        max-width: none;
+      }
+
+      .map-column {
+        height: 50vh;
+      }
+    }
+
+    /* ---------- Demo Controls ---------- */
+    .demo-controls {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(15, 23, 42, 0.9);
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 9999;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .demo-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .demo-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .demo-btn:hover {
+      background: #2563eb;
+    }
+
+    .demo-btn:active {
+      transform: translateY(1px);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Demo Controls -->
+  <div class="demo-controls">
+    <div class="demo-title">Demo Controls</div>
+    <div style="display:flex; gap:6px;">
+      <button class="demo-btn" onclick="fastForward(1)">+1m</button>
+      <button class="demo-btn" onclick="fastForward(2)">⏩ +2m</button>
+    </div>
+  </div>
+
+  <div class="page-layout">
+    <!-- LEFT: MAP CARD + BUTTON -->
+    <div class="map-column">
+      <div class="map-card">
+        <div id="map"></div>
+      </div>
+
+      <div class="map-footer">
+        <a href="/dashboard" class="back-btn">
+          <span>←</span> Back to Dashboard
+        </a>
+      </div>
+    </div>
+
+    <!-- RIGHT: PANELS -->
+    <div class="right-column">
+      <!-- Request Tracking (top) -->
+      <div class="panel-card tracking-card">
+        <h2>Request Tracking</h2>
+        <div class="request-id">ID: {{ request_id }}</div>
+
+        <div class="timer" id="timer">--:--</div>
+        <div class="timer-caption" id="timer-label">Next escalation in</div>
+
+        <div class="level-indicator">
+          <div class="level-step" id="lvl-1">
+            <span class="icon">🩸</span>
+            <span>Banks</span>
+          </div>
+          <div class="level-step" id="lvl-2">
+            <span class="icon">🏥</span>
+            <span>Hospitals</span>
+          </div>
+          <div class="level-step" id="lvl-3">
+            <span class="icon">🙋</span>
+            <span>Donors</span>
+          </div>
+        </div>
+
+        <div class="request-status-label" id="request-status-label">
+          Current stage: <span>Banks</span>
+        </div>
+      </div>
+
+      <!-- Live Transaction History (bottom) -->
+      <div class="panel-card history-card">
+        <div class="right-header">
+          <h3>Live Transaction History</h3>
+        </div>
+
+        <!-- Top stats row -->
+        <div class="stat-row">
+          <!-- Units Remaining -->
+          <div class="stat-box">
+            <div class="stat-title">Units Remaining</div>
+            <div class="stat-value-main" id="remaining-units">-</div>
+          </div>
+
+          <!-- Request Reach -->
+          <div class="stat-box reach-box">
+            <div class="stat-title">Request Reach</div>
+            <div class="reach-row">
+              <div class="reach-count" id="count-banks">0</div>
+              <div class="reach-label">Blood Banks Notified</div>
+            </div>
+            <div class="reach-row">
+              <div class="reach-count" id="count-hospitals">--</div>
+              <div class="reach-label">
+                Hospitals Notified <span class="reach-pending" id="reach-hospitals-state"></span>
+              </div>
+            </div>
+            <div class="reach-row">
+              <div class="reach-count" id="count-donors">--</div>
+              <div class="reach-label">
+                Donors Notified <span class="reach-pending" id="reach-donors-state"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity table -->
+        <div class="activity-wrapper">
+          <table class="activity-table">
+            <thead>
+              <tr>
+                <th style="width: 120px;">Time</th>
+                <th style="width: 120px;">Stage</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="activity-log-body">
+              <tr class="activity-empty-row">
+                <td colspan="3">Waiting for updates...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <script>
+    // ---------- MAP INITIALISATION ----------
+    var map = L.map('map').setView([40.7128, -74.0060], 11);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    var reqId = "{{ request_id }}";
+    var markers = L.layerGroup().addTo(map);
+    var radiusLayer = L.layerGroup().addTo(map);
+    var hasInitialCenter = false;
+
+    // Custom circle icons (no FontAwesome squares / boxes)
+    // Your hospital (requester) – green H
+    var userHospitalIcon = L.divIcon({
+      html: `
+        <div style="
+          width:28px;height:28px;
+          background:#10b981;
+          border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          color:#ffffff;font-weight:700;font-size:14px;
+          box-shadow:0 0 0 2px rgba(15,23,42,0.3);
+        ">H</div>
+      `,
+      className: '',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      popupAnchor: [0, -14]
+    });
+
+    // Other hospitals – blue H
+    var otherHospitalIcon = L.divIcon({
+      html: `
+        <div style="
+          width:26px;height:26px;
+          background:#2563eb;
+          border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          color:#ffffff;font-weight:700;font-size:13px;
+          box-shadow:0 0 0 2px rgba(15,23,42,0.25);
+        ">H</div>
+      `,
+      className: '',
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
+      popupAnchor: [0, -13]
+    });
+
+    // Blood banks – red droplet
+    var bankIcon = L.divIcon({
+      html: `
+        <div style="
+          width:26px;height:26px;
+          background:#dc2626;
+          border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          color:#ffffff;font-size:16px;
+          box-shadow:0 0 0 2px rgba(15,23,42,0.25);
+        ">💧</div>
+      `,
+      className: '',
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
+      popupAnchor: [0, -13]
+    });
+
+    var lastApiData = null;
+
+    // ---------- STAGE / TIMER LOGIC ----------
+    // 0–3   min: Banks
+    // 3–6   min: Hospitals
+    // 6–9   min: Donors (initial radius)
+    // 9–12  min: Donors (radius expanded +10 miles)
+    // >=12  min: Request ended
+
+    function computeStageMeta() {
+      if (!lastApiData || !lastApiData.request || !lastApiData.request.requested_at) {
+        return null;
+      }
+
+      var nowMs = Date.now();
+      var startMs = new Date(lastApiData.request.requested_at).getTime();
+      var elapsedSec = (nowMs - startMs) / 1000;
+      var elapsedMin = elapsedSec / 60;
+
+      var fulfilled = (lastApiData.request.status === 'FULFILLED') ||
+        (lastApiData.remaining_units === 0);
+
+      if (fulfilled) {
+        return {
+          stage: 'fulfilled',
+          stageLabel: 'Completed',
+          timerLabel: 'Request Fulfilled',
+          remainingSec: 0
+        };
+      }
+
+      var stage, stageLabel, timerLabel, stageElapsedMin;
+
+      if (elapsedMin < 3) {
+        stage = 1;
+        stageLabel = 'Banks';
+        timerLabel = 'Escalating to Hospitals in';
+        stageElapsedMin = elapsedMin - 0;
+      } else if (elapsedMin < 6) {
+        stage = 2;
+        stageLabel = 'Hospitals';
+        timerLabel = 'Escalating to Donors in';
+        stageElapsedMin = elapsedMin - 3;
+      } else if (elapsedMin < 10) {
+        stage = 3;
+        stageLabel = 'Donors';
+        timerLabel = 'Donor radius expands in';
+        stageElapsedMin = elapsedMin - 6;
+      } else if (elapsedMin < 20) {
+        stage = 4;
+        stageLabel = 'Donors (Expanded)';
+        timerLabel = 'Request ends in';
+        stageElapsedMin = elapsedMin - 10;
+      } else {
+        stage = 'ended';
+        stageLabel = 'Ended';
+        timerLabel = 'Request Ended';
+        stageElapsedMin = 10; // fully elapsed
+      }
+
+      // Calculate remaining sec based on the new durations
+      // Stage 1 (Banks): 3m duration
+      // Stage 2 (Hosps): 3m duration
+      // Stage 3 (Donor): 4m duration (6 to 10)
+      // Stage 4 (Donor+): 10m duration (10 to 20)
+      var duration = 3;
+      if (stage === 3) duration = 4;
+      if (stage === 4) duration = 10;
+
+      var remainingSec = Math.max(0, (duration * 60) - stageElapsedMin * 60);
+
+      return {
+        stage: stage,
+        stageLabel: stageLabel,
+        timerLabel: timerLabel,
+        remainingSec: remainingSec
+      };
+    }
+
+    function updateTimerDisplay() {
+      var meta = computeStageMeta();
+      if (!meta) return;
+
+      var timerEl = document.getElementById('timer');
+      var timerLabelEl = document.getElementById('timer-label');
+      var statusSpan = document.querySelector('#request-status-label span');
+
+      // Format mm:ss
+      var m = Math.floor(meta.remainingSec / 60);
+      var s = Math.floor(meta.remainingSec % 60);
+      var sStr = s < 10 ? '0' + s : '' + s;
+
+      timerEl.textContent = m + ':' + sStr;
+      timerLabelEl.textContent = meta.timerLabel;
+
+      // Colour timer for end/fulfilled
+      if (meta.stage === 'fulfilled') {
+        timerEl.style.color = 'var(--accent-green)';
+      } else if (meta.stage === 'ended') {
+        timerEl.style.color = 'var(--accent-red)';
+      } else {
+        timerEl.style.color = 'var(--accent-red)';
+      }
+
+      if (statusSpan) {
+        statusSpan.textContent = meta.stageLabel;
+        if (meta.stage === 'ended') {
+          statusSpan.style.color = '#ef4444';
+        } else if (meta.stage === 'fulfilled') {
+          statusSpan.style.color = '#10b981';
+        } else {
+          statusSpan.style.color = 'var(--accent-green)';
+        }
+      }
+
+      // Highlight shift path
+      document.querySelectorAll('.level-step').forEach(el => el.classList.remove('active'));
+      if (meta.stage === 1) {
+        document.getElementById('lvl-1').classList.add('active');
+      } else if (meta.stage === 2) {
+        document.getElementById('lvl-2').classList.add('active');
+      } else if (meta.stage === 3 || meta.stage === 4 || meta.stage === 'fulfilled' || meta.stage === 'ended') {
+        // Anything in donor phase or beyond highlights donors
+        document.getElementById('lvl-3').classList.add('active');
+      }
+    }
+
+    // ---------- MAP RENDERING (BANKS / HOSPITALS / DONOR SEARCH) ----------
+    function renderMap(data) {
+      lastApiData = data;
+
+      markers.clearLayers();
+      radiusLayer.clearLayers();
+
+      var req = data.request;
+      if (!req) return;
+
+      var requesterLatLng;
+      if (req.latitude != null && req.longitude != null) {
+        requesterLatLng = [req.latitude, req.longitude];
+      } else {
+        console.warn('Requester has no coordinates, defaulting to NYC');
+        requesterLatLng = [40.7128, -74.0060];
+      }
+
+      var requesterOrgId = (req.org_id != null) ? String(req.org_id) : null;
+
+      // One-time center; after that, zoom and center stay fixed
+      if (!hasInitialCenter) {
+        map.setView(requesterLatLng, 11);
+        hasInitialCenter = true;
+      }
+
+      // YOUR hospital marker (requester) – always green H at the center
+      var reqMarker = L.marker(requesterLatLng, { icon: userHospitalIcon })
+        .bindPopup(`<b>YOUR HOSPITAL</b><br>${req.blood_type} ${req.component}<br>${req.units_requested} Units`)
+        .addTo(markers);
+
+      var meta = computeStageMeta();
+      var stage = meta ? meta.stage : 1;
+
+      var isEnded = (stage === 'ended' || stage === 'fulfilled');
+
+      // Radius config (still used conceptually, but no map zooming)
+      var baseRadiusMiles =
+        (req.radius_miles) ||
+        (req.radius_km ? req.radius_km * 0.621371 : 10); // default 10
+      var extraDonorMiles = 10;
+
+      // If request is fulfilled we try to show only fulfillers (banks/hospitals).
+      if (isEnded) {
+        var activeBankNames = new Set();
+        var activeHospitalNames = new Set();
+
+        if (data.activity && data.activity.length > 0) {
+          data.activity.forEach(function (act) {
+            if (!act.fulfiller_name) return;
+            if (act.fulfilled_by_entity_type === 'BANK') {
+              activeBankNames.add(act.fulfiller_name);
+            } else if (act.fulfilled_by_entity_type === 'HOSPITAL') {
+              activeHospitalNames.add(act.fulfiller_name);
+            }
+          });
+        }
+
+        // Show only banks that actually fulfilled (if any)
+        if (data.banks && data.banks.length) {
+          data.banks.forEach(function (b) {
+            if (activeBankNames.size === 0 || activeBankNames.has(b.name)) {
+              L.marker([b.latitude, b.longitude], { icon: bankIcon })
+                .bindPopup(`<b>${b.name}</b><br>Blood Bank`)
+                .addTo(markers);
+            }
+          });
+        }
+
+        // Show only hospitals that actually fulfilled (if any)
+        if (data.hospitals && data.hospitals.length) {
+          data.hospitals.forEach(function (h) {
+            var isRequesterHospital = requesterOrgId && String(h.org_id) === requesterOrgId;
+            var iconToUse = isRequesterHospital ? userHospitalIcon : otherHospitalIcon;
+
+            if (activeHospitalNames.size === 0 || activeHospitalNames.has(h.name)) {
+              L.marker([h.latitude, h.longitude], { icon: iconToUse })
+                .bindPopup(`<b>${h.name}</b><br>Hospital`)
+                .addTo(markers);
+            }
+          });
+        }
+
+        // Donor locations are NEVER shown, even on fulfillment.
+        return;
+      }
+
+      // ACTIVE (not ended) – show per current stage:
+      if (stage === 1) {
+        // Banks only
+        if (data.banks && data.banks.length) {
+          data.banks.forEach(function (b) {
+            L.marker([b.latitude, b.longitude], { icon: bankIcon })
+              .bindPopup(`<b>${b.name}</b><br>Blood Bank`)
+              .addTo(markers);
+          });
+        }
+      } else if (stage === 2) {
+        // Hospitals only
+        if (data.hospitals && data.hospitals.length) {
+          data.hospitals.forEach(function (h) {
+            var isRequesterHospital = requesterOrgId && String(h.org_id) === requesterOrgId;
+            var iconToUse = isRequesterHospital ? userHospitalIcon : otherHospitalIcon;
+
+            L.marker([h.latitude, h.longitude], { icon: iconToUse })
+              .bindPopup(`<b>${h.name}</b><br>Hospital`)
+              .addTo(markers);
+          });
+        }
+      } else if (stage === 3 || stage === 4) {
+        // Donor search: keep the hospital map as-is + add radar overlay
+        if (data.hospitals && data.hospitals.length) {
+          data.hospitals.forEach(function (h) {
+            var isRequesterHospital = requesterOrgId && String(h.org_id) === requesterOrgId;
+            var iconToUse = isRequesterHospital ? userHospitalIcon : otherHospitalIcon;
+
+            L.marker([h.latitude, h.longitude], { icon: iconToUse })
+              .bindPopup(`<b>${h.name}</b><br>Hospital`)
+              .addTo(markers);
+          });
+        }
+
+        // Optional: radius in miles (logic retained if you want to show in tooltip or later)
+        var miles = baseRadiusMiles + (stage === 4 ? extraDonorMiles : 0);
+        // var meters = miles * 1609.34; // not used for map zoom now
+
+        var labelText = (stage === 3)
+          ? 'Searching for donors…'
+          : 'Radius expanded +10 miles — searching again…';
+
+        // Radar overlay at requester location
+        L.marker(requesterLatLng, {
+          icon: L.divIcon({
+            className: '',
+            html: `
+              <div class="radar-container">
+                <div class="search-float-label">${labelText}</div>
+                <div class="radar-ring"></div>
+                <div class="radar-ring"></div>
+                <div class="radar-ring"></div>
+                <div class="radar-center"></div>
+              </div>
+            `,
+            iconSize: [220, 220],
+            iconAnchor: [110, 110]
+          })
+        }).addTo(radiusLayer);
+      }
+    }
+
+    // ---------- STATS + REACH + ACTIVITY TABLE ----------
+    function renderStats(data) {
+      if (!data) return;
+      lastApiData = data;
+
+      var meta = computeStageMeta();
+
+      // Units remaining
+      var remainingEl = document.getElementById('remaining-units');
+      if (remainingEl) {
+        remainingEl.textContent = data.remaining_units != null ? data.remaining_units : '-';
+      }
+
+      // Reach stats
+      var cBanks = document.getElementById('count-banks');
+      var cHosps = document.getElementById('count-hospitals');
+      var cDonors = document.getElementById('count-donors');
+      var hospStateEl = document.getElementById('reach-hospitals-state');
+      var donorStateEl = document.getElementById('reach-donors-state');
+
+      if (data.counts) {
+        cBanks.textContent = data.counts.banks != null ? data.counts.banks : 0;
+
+        if (meta && (meta.stage === 2 || meta.stage === 3 || meta.stage === 4 || meta.stage === 'fulfilled' || meta.stage === 'ended')) {
+          cHosps.textContent = data.counts.hospitals != null ? data.counts.hospitals : 0;
+          if (hospStateEl) hospStateEl.textContent = '';
+        } else {
+          cHosps.textContent = '--';
+          if (hospStateEl) hospStateEl.textContent = ' (pending)';
+        }
+
+        if (meta && (meta.stage === 3 || meta.stage === 4 || meta.stage === 'fulfilled' || meta.stage === 'ended')) {
+          cDonors.textContent = data.counts.donors != null ? data.counts.donors : 0;
+          if (donorStateEl) donorStateEl.textContent = '';
+        } else {
+          cDonors.textContent = '--';
+          if (donorStateEl) donorStateEl.textContent = ' (pending)';
+        }
+      }
+
+      // Activity table (back-end events + one synthetic "request started" row)
+      var tbody = document.getElementById('activity-log-body');
+      if (!tbody) return;
+
+      var rows = '';
+
+      // Synthetic first row: request started
+      if (data.request && data.request.requested_at) {
+        var startTime = new Date(data.request.requested_at).toLocaleTimeString();
+        rows += `
+          <tr>
+            <td class="activity-time">${startTime}</td>
+            <td class="activity-stage">Banks</td>
+            <td>Request started — searching for nearby blood banks.</td>
+          </tr>`;
+      }
+
+      if (data.activity && data.activity.length > 0) {
+        // Oldest → newest so history never "disappears"
+        var acts = data.activity.slice().sort(function (a, b) {
+          var ta = a.completed_at ? new Date(a.completed_at).getTime() : 0;
+          var tb = b.completed_at ? new Date(b.completed_at).getTime() : 0;
+          return ta - tb;
+        });
+
+        acts.forEach(function (act) {
+          var timeStr = act.completed_at ? new Date(act.completed_at).toLocaleTimeString() : '--';
+          var stage = act.fulfilled_by_entity_type || 'Update';
+          var status = act.status || '';
+          var statusClass =
+            status === 'FULFILLED'
+              ? 'activity-status-fulfilled'
+              : (status === 'PARTIAL' ? 'activity-status-partial' : '');
+
+          var detailParts = [];
+          if (act.fulfiller_name) {
+            detailParts.push('<strong>' + act.fulfiller_name + '</strong>');
+          }
+          if (act.units_fulfilled) {
+            detailParts.push('accepted <strong>' + act.units_fulfilled + ' units</strong>');
+          }
+          if (act.notes) {
+            detailParts.push(act.notes);
+          }
+
+          var details = detailParts.join(' — ');
+          if (!details) details = 'Update';
+
+          rows += `
+            <tr>
+              <td class="activity-time">${timeStr}</td>
+              <td class="activity-stage">${stage}</td>
+              <td>
+                ${details}
+                ${status ? '&nbsp;<span class="' + statusClass + '">' + status + '</span>' : ''}
+              </td>
+            </tr>`;
+        });
+      }
+
+      // Synthetic stage transition messages based on current stage
+      if (meta) {
+        var nowStr = new Date().toLocaleTimeString();
+        if (meta.stage === 2) {
+          rows += `
+            <tr>
+              <td class="activity-time">${nowStr}</td>
+              <td class="activity-stage">Hospitals</td>
+              <td>Bank window ended — searching for nearby hospitals.</td>
+            </tr>`;
+        } else if (meta.stage === 3) {
+          rows += `
+            <tr>
+              <td class="activity-time">${nowStr}</td>
+              <td class="activity-stage">Donors</td>
+              <td>Hospital window ended — searching for donors within initial radius.</td>
+            </tr>`;
+        } else if (meta.stage === 4) {
+          rows += `
+            <tr>
+              <td class="activity-time">${nowStr}</td>
+              <td class="activity-stage">Donors</td>
+              <td>Donor radius expanded by 10 miles — continuing search.</td>
+            </tr>`;
+        } else if (meta.stage === 'ended') {
+          rows += `
+            <tr>
+              <td class="activity-time">${nowStr}</td>
+              <td class="activity-stage">Ended</td>
+              <td>Request ended — not fully completed within the time window.</td>
+            </tr>`;
+        } else if (meta.stage === 'fulfilled') {
+          rows += `
+            <tr>
+              <td class="activity-time">${nowStr}</td>
+              <td class="activity-stage">Completed</td>
+              <td>Request completed — all units fulfilled.</td>
+            </tr>`;
+        }
+      }
+
+      if (!rows) {
+        rows = `
+          <tr class="activity-empty-row">
+            <td colspan="3">No activity yet.</td>
+          </tr>`;
+      }
+
+      tbody.innerHTML = rows;
+
+      // Finally, timer + stage highlight
+      updateTimerDisplay();
+    }
+
+    // ---------- API POLLING ----------
+    function updateData() {
+      fetch('/api/request-matches/' + reqId)
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data.error) {
+            console.error(data.error);
+            return;
+          }
+          lastApiData = data;
+          renderMap(data);
+          renderStats(data);
+        })
+        .catch(function (err) {
+          console.error(err);
+        });
+    }
+
+    updateData();
+    setInterval(updateData, 2000);      // live data (fast polling)
+    setInterval(updateTimerDisplay, 1000); // smooth countdown
+
+    // Demo Control Logic
+    // Demo Control Logic
+    window.fastForward = function (mins) {
+      console.log('Fast forwarding', mins);
+      if (!reqId) {
+        console.error('No Request ID found');
+        return;
+      }
+      fetch('/api/demo/fast-forward/' + reqId + '?minutes=' + mins, { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+          console.log(d.message);
+          // Show a small toast or visual feedback
+          var btn = document.querySelector('.demo-btn');
+          var origText = btn.textContent;
+          btn.textContent = 'Done! ✅';
+          setTimeout(() => btn.textContent = origText, 1000);
+
+          updateData(); // Immediate refresh
+        })
+        .catch(err => console.error('FF Error:', err));
+    }
+  </script>
+</body>
+
+</html>

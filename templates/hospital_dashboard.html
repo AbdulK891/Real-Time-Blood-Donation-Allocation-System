@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block content %}
+<h3>Hospital Dashboard - {{ hospital['name'] }}</h3>
+<hr>
+
+<h5>Your Inventory</h5>
+<table class="table table-bordered table-sm">
+    <tr><th>Blood Type</th><th>Units</th><th>Last Updated</th></tr>
+    {% for row in own_inventory %}
+    <tr><td>{{ row['blood_type'] }}</td><td>{{ row['units'] }}</td><td>{{ row['last_updated'] }}</td></tr>
+    {% endfor %}
+</table>
+
+<h5>Blood Banks Inventory</h5>
+<table class="table table-bordered table-sm">
+    <tr><th>Name</th><th>Location</th><th>Blood Type</th><th>Units</th></tr>
+    {% for row in blood_bank_inventory %}
+    <tr><td>{{ row['blood_bank_name'] }}</td><td>{{ row['location'] }}</td><td>{{ row['blood_type'] }}</td><td>{{ row['units'] }}</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

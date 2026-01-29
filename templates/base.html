@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Blood Bank Management System{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .navbar {
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        .content-wrapper {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: bold;
+        }
+        .blood-type-badge {
+            font-size: 1.1em;
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+        .urgency-critical {
+            background-color: #dc3545;
+            color: white;
+        }
+        .urgency-urgent {
+            background-color: #fd7e14;
+            color: white;
+        }
+        .urgency-normal {
+            background-color: #0dcaf0;
+            color: white;
+        }
+        .status-pending {
+            background-color: #ffc107;
+        }
+        .status-fulfilled {
+            background-color: #198754;
+            color: white;
+        }
+        .btn-custom {
+            border-radius: 25px;
+            padding: 10px 30px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="bi bi-heart-pulse-fill text-danger"></i> Blood Bank System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        {% if current_user.user_type in ['hospital', 'blood_bank'] %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('view_transfers') }}">
+                                <i class="bi bi-arrow-left-right"></i> Transfers
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <span class="nav-link">
+                                <i class="bi bi-person-circle"></i> {{ current_user.username }}
+                                <span class="badge bg-secondary">{{ current_user.user_type }}</span>
+                            </span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('logout') }}">
+                                <i class="bi bi-box-arrow-right"></i> Logout
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container content-wrapper">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

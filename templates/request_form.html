@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Request Blood • Org {{ org }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    :root {
+      /* Page + palette (medium blue background, white + light-blue cards) */
+      --page-bg-start: #1d4ed8;
+      --page-bg-end: #2563eb;
+      --panel-bg-map: #ffffff;
+      --panel-bg-form: #e5f0ff;
+      --border-soft: #cbd5f5;
+      --text-main: #0b1220;
+      --text-muted: #6b7280;
+      --accent-blue: #2563eb;
+      --accent-blue2: #3b82f6;
+      --input-bg: #f3f6ff;
+      --input-border: #d0ddff;
+      --btn-text: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      margin: 0;
+      padding: 32px 20px;
+      background: radial-gradient(circle at top left, var(--page-bg-end), var(--page-bg-start));
+      min-height: 100vh;
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    /* Remove default Leaflet divIcon background & border */
+    .leaflet-marker-icon,
+    .leaflet-marker-shadow {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    h2 {
+      margin: 0 0 4px 0;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #f9fbff;
+    }
+
+    .page-subtitle {
+      font-size: 0.9rem;
+      color: #dbe6ff;
+      margin-bottom: 18px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .panel {
+      border-radius: 18px;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.28);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel.map-panel {
+      background: var(--panel-bg-map);
+      border: 1px solid var(--border-soft);
+    }
+
+    .panel.form-panel {
+      background: var(--panel-bg-form);
+      border: 1px solid var(--border-soft);
+    }
+
+    .panel-header {
+      padding: 16px 18px 10px 18px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 0;
+    }
+
+    .panel-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin: 4px 0 0 0;
+    }
+
+    .panel-body {
+      padding: 14px 18px 18px 18px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Map styling */
+    #map {
+      width: 100%;
+      height: 420px;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .map-legend {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .legend-dot.hospital {
+      background: #10b981; /* Your hospital = green */
+    }
+
+    .legend-dot.bank {
+      background: #dc2626;
+    }
+
+    .legend-dot.outside {
+      background: #9ca3af;
+    }
+
+    /* Form styling */
+    form {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .field-label {
+      margin-bottom: 4px;
+    }
+
+    select,
+    input {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 10px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      margin-top: 2px;
+    }
+
+    select:focus,
+    input:focus {
+      outline: 2px solid var(--accent-blue);
+      border-color: var(--accent-blue);
+      background: #ffffff;
+    }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .form-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 9px 18px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+      background: #e5e7eb;
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue2));
+      color: var(--btn-text);
+      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.5);
+    }
+
+    .btn.primary:hover {
+      filter: brightness(1.05);
+    }
+
+    .btn:hover {
+      opacity: 0.96;
+    }
+
+    @media (max-width: 960px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      #map {
+        height: 320px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>New Request • Org {{ org }}</h2>
+    <div class="page-subtitle">
+      Create an emergency request and visualize nearby hospitals & blood banks within your chosen radius.
+    </div>
+
+    <div class="layout">
+      <!-- LEFT: MAP PANEL -->
+      <div class="panel map-panel">
+        <div class="panel-header">
+          <p class="panel-title">Network Map</p>
+          <p class="panel-subtitle">Your hospital is centered. Banks & hospitals fade out when outside the selected radius.</p>
+        </div>
+        <div class="panel-body">
+          <div id="map"></div>
+          <div class="map-legend">
+            <span class="legend-item">
+              <span class="legend-dot hospital"></span> Your Hospital
+            </span>
+            <span class="legend-item">
+              <span class="legend-dot bank"></span> Blood Banks (inside radius)
+            </span>
+            <span class="legend-item">
+              <span class="legend-dot outside"></span> Orgs outside radius
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: FORM PANEL -->
+      <div class="panel form-panel">
+        <div class="panel-header">
+          <p class="panel-title">Request Details</p>
+          <p class="panel-subtitle">Specify urgency, blood type, units, and search radius for your broadcast.</p>
+        </div>
+        <div class="panel-body">
+          <form method="post" action="{{ url_for('new_request') }}">
+            <!-- Urgency -->
+            <div class="form-section">
+              <label>
+                <div class="field-label">Urgency</div>
+                <select name="urgency_kind" id="urgency_kind" required>
+                  <option value="">Select…</option>
+                  <option value="emergency">Emergency (Level 1)</option>
+                  <option value="blood_drive">Blood Drive (Level 2)</option>
+                </select>
+                <div class="hint">Map & radius are only used for emergency broadcasts to blood banks.</div>
+              </label>
+            </div>
+
+            <!-- Emergency-only fields -->
+            <div id="emergency_fields" style="display:none; margin-top:8px;">
+              <div class="form-grid">
+                <label>
+                  <div class="field-label">Blood Type</div>
+                  <select name="blood_type">
+                    <option value="">Select…</option>
+                    {% for bt in ['O+','O-','A+','A-','B+','B-','AB+','AB-'] %}
+                    <option value="{{ bt }}">{{ bt }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+
+                <label>
+                  <div class="field-label">Component</div>
+                  <select name="component">
+                    <option value="">Select…</option>
+                    {% for c in ['RBC','Plasma','Platelets','Whole'] %}
+                    <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+
+                <label>
+                  <div class="field-label">Units Needed</div>
+                  <input type="number" name="units" min="1" placeholder="e.g., 4" />
+                </label>
+
+                <label>
+                  <div class="field-label">
+                    Radius (miles)
+                  </div>
+                  <input
+                    type="number"
+                    name="radius"
+                    id="radius_input"
+                    min="1"
+                    value="10"
+                    placeholder="e.g., 10"
+                  />
+                  <div class="hint">Banks outside this radius will be visually faded on the map.</div>
+                </label>
+              </div>
+            </div>
+
+            <!-- BLOOD DRIVE FIELDS -->
+            <div id="blood_drive_fields" style="display:none; margin-top:8px;">
+              <label for="drive_date">
+                <div class="field-label">Blood Drive Date</div>
+                <input id="drive_date" type="date" name="drive_date" />
+                <div class="hint">Stored as the request date (midnight).</div>
+              </label>
+
+              <label for="drive_location">
+                <div class="field-label">Drive Location</div>
+                <input id="drive_location" type="text" name="drive_location" placeholder="Enter location" />
+                <div class="hint">Shown to donors in their dashboard and email notifications.</div>
+              </label>
+
+              <label for="drive_radius_input">
+                <div class="field-label">Radius (miles)</div>
+                <input
+                  id="drive_radius_input"
+                  name="drive_radius"
+                  type="number"
+                  min="1"
+                  value="25"
+                  placeholder="e.g., 25"
+                />
+                <div class="hint">Donors within this radius will see the blood drive.</div>
+              </label>
+            </div>
+
+            <div class="actions">
+              <button class="btn primary" type="submit">Submit request</button>
+              <a class="btn" href="{{ url_for('dashboard') }}">← Back to dashboard</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script>
+    // Urgency toggle (Emergency vs Blood Drive)
+    const urgencySel = document.getElementById('urgency_kind');
+    const emergencyFields = document.getElementById('emergency_fields');
+    const bloodDriveFields = document.getElementById('blood_drive_fields');
+
+    function toggleFields() {
+      if (urgencySel.value === 'emergency') {
+        emergencyFields.style.display = 'block';
+        bloodDriveFields.style.display = 'none';
+      } else if (urgencySel.value === 'blood_drive') {
+        emergencyFields.style.display = 'none';
+        bloodDriveFields.style.display = 'block';
+      } else {
+        emergencyFields.style.display = 'none';
+        bloodDriveFields.style.display = 'none';
+      }
+    }
+    urgencySel.addEventListener('change', toggleFields);
+    toggleFields(); // init
+
+    // Map + radius logic (frontend-only)
+    // CURRENT LOGGED-IN HOSPITAL ID
+    const currentOrgId = "{{ org_id }}";
+    console.log("DEBUG currentOrgId =", currentOrgId);
+
+    const radiusInput = document.getElementById('radius_input');
+
+    let map, radiusCircle;
+    let hospitalMarker = null;
+    let bankMarkers = [];
+    let otherHospitalMarkers = [];
+
+    function distanceMiles(lat1, lon1, lat2, lon2) {
+      const R = 3958.8;
+      const toRad = x => x * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    /* ICONS */
+
+    // Your logged-in hospital (GREEN H, slightly bigger)
+    const userHospitalIcon = L.divIcon({
+      html: `
+        <div style="
+          width:28px;height:28px;
+          background:#10b981;
+          border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          color:white;font-weight:700;font-size:14px;
+        ">H</div>
+      `,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+
+    // Other hospitals (BLUE H)
+    const otherHospitalIcon = L.divIcon({
+      html: `
+        <div style="
+          width:26px;height:26px;
+          background:#2563eb;
+          border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          color:white;font-weight:700;font-size:13px;
+        ">H</div>
+      `,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    });
+
+    // Blood banks (RED droplet)
+    const bankIcon = L.divIcon({
+      html: `
+        <div style="
+          width:26px;height:26px;
+          background:#dc2626;
+          border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          color:white;font-size:16px;
+        ">💧</div>
+      `,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    });
+
+    // Radius + fading
+    function updateRadiusVisual(centerLat, centerLon) {
+      const radiusMiles = parseFloat(radiusInput.value || "10");
+      const radiusMeters = radiusMiles * 1609.34;
+
+      if (!radiusCircle) {
+        radiusCircle = L.circle([centerLat, centerLon], {
+          radius: radiusMeters,
+          color: '#38bdf8',
+          fillColor: '#bfdbfe',
+          fillOpacity: 0.18,
+          weight: 1.5
+        }).addTo(map);
+      } else {
+        radiusCircle.setLatLng([centerLat, centerLon]);
+        radiusCircle.setRadius(radiusMeters);
+      }
+
+      [...bankMarkers, ...otherHospitalMarkers].forEach(item => {
+        const dist = distanceMiles(centerLat, centerLon, item.lat, item.lon);
+        const inside = dist <= radiusMiles;
+        const icon = item.layer.getElement();
+        if (!icon) return;
+
+        if (inside) {
+          icon.style.opacity = "1";
+          icon.style.filter = "none";
+        } else {
+          icon.style.opacity = "0.35";
+          icon.style.filter = "grayscale(60%) brightness(0.85)";
+        }
+      });
+    }
+
+    function initMap() {
+      fetch("{{ url_for('map_data') }}")
+        .then(r => r.json())
+        .then(data => {
+          const orgs = data.orgs || [];
+
+          // Find current hospital
+          let centerOrg = orgs.find(o => String(o.org_id) === String(currentOrgId));
+          if (!centerOrg) {
+            centerOrg = orgs.find(o => o.org_type === 'Hospital') || orgs[0];
+          }
+          if (!centerOrg || centerOrg.latitude == null || centerOrg.longitude == null) {
+            console.warn("No valid coordinates found for current org.");
+            return;
+          }
+
+          const centerLat = centerOrg.latitude;
+          const centerLon = centerOrg.longitude;
+
+          // Init map
+          map = L.map('map').setView([centerLat, centerLon], 10);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '&copy; OpenStreetMap'
+          }).addTo(map);
+
+          // Current hospital marker (GREEN, no popup)
+          hospitalMarker = L.marker([centerLat, centerLon], { icon: userHospitalIcon }).addTo(map);
+
+          // Other orgs: banks + other hospitals
+          orgs.forEach(o => {
+            if (o.latitude == null || o.longitude == null) return;
+
+            const lat = o.latitude;
+            const lon = o.longitude;
+
+            // Skip the current hospital (already added)
+            if (String(o.org_id) === String(centerOrg.org_id)) return;
+
+            if (o.org_type === 'BloodBank') {
+              const m = L.marker([lat, lon], { icon: bankIcon }).addTo(map);
+              bankMarkers.push({ lat, lon, layer: m });
+            } else if (o.org_type === 'Hospital') {
+              const m = L.marker([lat, lon], { icon: otherHospitalIcon }).addTo(map);
+              otherHospitalMarkers.push({ lat, lon, layer: m });
+            }
+          });
+
+          // Initial radius + fade
+          updateRadiusVisual(centerLat, centerLon);
+
+          // Listen for radius changes
+          radiusInput.addEventListener('input', () => updateRadiusVisual(centerLat, centerLon));
+          radiusInput.addEventListener('change', () => updateRadiusVisual(centerLat, centerLon));
+        })
+        .catch(err => {
+          console.error("Failed to load map data", err);
+        });
+    }
+
+    // Initialize map when DOM is ready
+    document.addEventListener('DOMContentLoaded', initMap);
+  </script>
+</body>
+
+</html>

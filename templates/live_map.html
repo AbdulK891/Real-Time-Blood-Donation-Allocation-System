@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>BloodBridge Live Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .legend {
+            padding: 6px 8px;
+            font: 14px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            line-height: 24px;
+            color: #555;
+        }
+
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 10px;
+            left: 50px;
+            /* clear zoom controls */
+            z-index: 1000;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        var userLat = {{ user_lat or 'null' }};
+        var userLon = {{ user_lon or 'null' }};
+        var startLat = userLat || 40.7128;
+        var startLon = userLon || -74.0060;
+
+        var map = L.map('map').setView([startLat, startLon], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Custom Icons using FontAwesome
+        // Custom Icons using FontAwesome (Standardized)
+        var hospitalIcon = L.divIcon({
+            html: '<i class="fa fa-plus-square fa-2x" style="color:red; text-shadow: 1px 1px 2px white;"></i>',
+            className: 'custom-div-icon',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+            popupAnchor: [0, -12]
+        });
+
+        var bankIcon = L.divIcon({
+            html: '<i class="fa fa-tint fa-2x" style="color:darkred; text-shadow: 1px 1px 2px white;"></i>',
+            className: 'custom-div-icon',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+            popupAnchor: [0, -12]
+        });
+
+        var donorIcon = L.divIcon({
+            html: '<i class="fa fa-user fa-2x" style="color:green; text-shadow: 1px 1px 2px white;"></i>',
+            className: 'custom-div-icon',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+            popupAnchor: [0, -12]
+        });
+
+        var requestIcon = L.divIcon({
+            html: '<i class="fa fa-exclamation-circle fa-2x" style="color:orange; text-shadow: 1px 1px 2px white;"></i>',
+            className: 'custom-div-icon',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+            popupAnchor: [0, -12]
+        });
+
+        // Add "You are here" marker
+        if (userLat && userLon) {
+            L.marker([userLat, userLon], {
+                icon: L.divIcon({
+                    html: '<i class="fa fa-map-marker-alt fa-3x" style="color:#3b82f6; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);"></i>',
+                    className: 'custom-div-icon',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30],
+                    popupAnchor: [0, -30]
+                })
+            })
+                .bindPopup("<b>You are here</b>")
+                .addTo(map);
+        }
+
+        fetch('/api/map-data')
+            .then(response => response.json())
+            .then(data => {
+                var bounds = L.latLngBounds();
+
+                // Plot Organizations
+                data.orgs.forEach(org => {
+                    var icon = org.org_type === 'BloodBank' ? bankIcon : hospitalIcon;
+                    var marker = L.marker([org.latitude, org.longitude], { icon: icon })
+                        .bindPopup(`<b>${org.name}</b><br>${org.org_type}<br>${org.city}, ${org.state}`);
+                    marker.addTo(map);
+                    bounds.extend(marker.getLatLng());
+                });
+
+                // Plot Donors
+                data.donors.forEach(donor => {
+                    var marker = L.marker([donor.latitude, donor.longitude], { icon: donorIcon })
+                        .bindPopup(`<b>Donor: ${donor.firstname} ${donor.lastname}</b><br>Type: ${donor.bloodtype}<br>${donor.city}`);
+                    marker.addTo(map);
+                    bounds.extend(marker.getLatLng());
+                });
+
+                // Plot Requests (slightly offset if same location as requester?)
+                // For now, just putting them at the requester's location with a different popup
+                data.requests.forEach(req => {
+                    var marker = L.marker([req.latitude, req.longitude], { icon: requestIcon })
+                        .bindPopup(`<b>REQUEST</b><br>${req.blood_type} ${req.component}<br>Units: ${req.units_requested}<br>By: ${req.requester_name}`);
+                    marker.addTo(map);
+                    // No need to extend bounds for requests as they are at org locations
+                });
+
+                if (data.orgs.length > 0 || data.donors.length > 0) {
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
+            })
+            .catch(err => console.error('Error loading map data:', err));
+
+        // Legend
+        var legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML += '<i style="background: blue"></i> Hospital<br>';
+            div.innerHTML += '<i style="background: red"></i> Blood Bank<br>';
+            div.innerHTML += '<i style="background: green"></i> Donor<br>';
+            div.innerHTML += '<i style="background: orange"></i> Active Request<br>';
+            return div;
+        };
+        legend.addTo(map);
+
+    </script>
+</body>
+
+</html>

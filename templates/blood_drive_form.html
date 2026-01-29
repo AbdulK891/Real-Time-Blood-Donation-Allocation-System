@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Create Blood Drive • Org {{ org }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      /* Page + palette (medium blue background, white + light-blue card) */
+      --page-bg-start: #1d4ed8;
+      --page-bg-end: #2563eb;
+      --panel-bg-form: #e5f0ff;
+      --border-soft: #cbd5f5;
+      --text-main: #0b1220;
+      --text-muted: #6b7280;
+      --accent-blue: #2563eb;
+      --accent-blue2: #3b82f6;
+      --input-bg: #f3f6ff;
+      --input-border: #d0ddff;
+      --btn-text: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      margin: 0;
+      padding: 32px 20px;
+      background: radial-gradient(circle at top left, var(--page-bg-end), var(--page-bg-start));
+      min-height: 100vh;
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+    }
+
+    h2 {
+      margin: 0 0 4px 0;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #f9fbff;
+    }
+
+    .page-subtitle {
+      font-size: 0.9rem;
+      color: #dbe6ff;
+      margin-bottom: 18px;
+    }
+
+    .panel {
+      border-radius: 18px;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.28);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: var(--panel-bg-form);
+      border: 1px solid var(--border-soft);
+    }
+
+    .panel-header {
+      padding: 16px 18px 10px 18px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 0;
+    }
+
+    .panel-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin: 4px 0 0 0;
+    }
+
+    .panel-body {
+      padding: 18px 18px 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    form {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .field-label {
+      margin-bottom: 4px;
+    }
+
+    input {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 10px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      margin-top: 2px;
+    }
+
+    input:focus {
+      outline: 2px solid var(--accent-blue);
+      border-color: var(--accent-blue);
+      background: #ffffff;
+    }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .form-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 9px 18px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+      background: #e5e7eb;
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue2));
+      color: var(--btn-text);
+      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.5);
+    }
+
+    .btn.primary:hover {
+      filter: brightness(1.05);
+    }
+
+    .btn:hover {
+      opacity: 0.96;
+    }
+
+    @media (max-width: 640px) {
+      .panel-body {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Create Blood Drive • Org {{ org }}</h2>
+    <div class="page-subtitle">
+      Set the drive date, public location text, and donor radius for this blood drive announcement.
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <p class="panel-title">Blood Drive Details</p>
+        <p class="panel-subtitle">
+          Set the drive date, public location text, and donor radius for this blood drive announcement.
+        </p>
+      </div>
+      <div class="panel-body">
+        <form action="{{ url_for('new_blood_drive') }}" method="post">
+          <div class="form-section">
+            <label for="drive_date">
+              <div class="field-label">Drive Date</div>
+              <input id="drive_date" name="drive_date" type="date" required />
+              <div class="hint">Stored as the request date (midnight).</div>
+            </label>
+
+            <label for="location">
+              <div class="field-label">Drive Location</div>
+              <input
+                id="location"
+                name="location"
+                type="text"
+                placeholder="e.g., Community Center, 123 Main St"
+              />
+              <div class="hint">Shown to donors in their dashboard and email notifications.</div>
+            </label>
+
+            <label for="drive_radius_input">
+              <div class="field-label">Radius (miles)</div>
+              <input
+                id="drive_radius_input"
+                name="drive_radius"
+                type="number"
+                min="1"
+                value="25"
+                placeholder="e.g., 25"
+              />
+              <div class="hint">Donors within this radius will see the blood drive.</div>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn primary">Publish Blood Drive</button>
+            <a href="{{ url_for('dashboard') }}" class="btn">← Back to dashboard</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

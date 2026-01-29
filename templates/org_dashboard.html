@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BLOOD BRIDGE – Hospital Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --page-bg: #f4f7fb;
+
+      --sidebar-gradient-start: #4f8bfd;
+      --sidebar-gradient-mid:   #3b82f6;
+      --sidebar-gradient-end:   #1d4ed8;
+
+      --card-bg-white: #ffffff;
+      --card-border-soft: #e2e8f0;
+      --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.08);
+
+      --accent-blue: #2563eb;
+      --accent-blue-hover: #1d4ed8;
+
+      --text-main: #0f172a;
+      --text-muted: #6b7280;
+
+      --inventory-bg: #e8f2ff;
+
+      --pill-bg: #e5edff;
+      --pill-border: #bfdbfe;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--page-bg);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+      overflow-y: auto;   /* allow scrolling */
+      overflow-x: hidden; /* prevent horizontal scroll */
+    }
+
+    .layout {
+      display: flex;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    /* ---------- SIDEBAR (always visible) ---------- */
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(
+        180deg,
+        var(--sidebar-gradient-start),
+        var(--sidebar-gradient-mid),
+        var(--sidebar-gradient-end)
+      );
+      padding: 24px 20px 32px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: #ffffff;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .brand-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.25);
+    }
+
+    .brand-logo img {
+      width: 80%;
+      height: 80%;
+      object-fit: contain;
+    }
+
+    .app-name {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .org-name {
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 3px;
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(15, 23, 42, 0.35);
+    }
+
+    .org-location {
+      font-size: 12px;
+      margin-top: 2px;
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    .nav-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Sidebar buttons */
+    a.btn, button.btn {
+      display: block;
+      width: 100%;
+      border-radius: 999px;
+      padding: 10px 16px;
+      border: none;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.18s ease, transform 0.1s ease, box-shadow 0.18s ease;
+      box-shadow: 0 0 0 rgba(15, 23, 42, 0);
+    }
+
+    a.btn:hover, button.btn:hover {
+      background: #ffffff;
+      color: var(--accent-blue);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.25);
+    }
+
+    /* ---------- MAIN CONTENT ---------- */
+    .main {
+      flex: 1;
+      background: #ffffff;
+      padding: 20px 28px 32px 28px;
+      overflow-y: auto;
+    }
+
+    .main-header {
+      margin-bottom: 16px;
+    }
+
+    .main-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .main-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ---------- TOP SMALL CHART ROW ---------- */
+    .top-row {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 0.9fr);
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--card-bg-white);
+      border-radius: 18px;
+      border: 1px solid var(--card-border-soft);
+      box-shadow: var(--shadow-soft);
+      padding: 14px 16px 16px 16px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      gap: 10px;
+    }
+
+    .card-header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .card-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 220px; /* compact charts */
+    }
+
+    .chart-filter select {
+      background: #ffffff;
+      border-radius: 999px;
+      border: 1px solid var(--card-border-soft);
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--text-main);
+      min-width: 120px;
+      cursor: pointer;
+    }
+
+    .chart-filter select:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.3);
+    }
+
+    /* ---------- INVENTORY SECTION ---------- */
+    .inventory-card {
+      background: var(--inventory-bg);
+      margin-top: 10px;
+      animation: cardFadeIn 0.45s ease-out;
+    }
+
+    .inventory-header {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin: 6px 0 14px 0;
+    }
+
+    .filters label {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    input[type="text"], select {
+      background: #ffffff;
+      border: 1px solid var(--card-border-soft);
+      border-radius: 8px;
+      padding: 7px 9px;
+      font-size: 13px;
+      min-width: 160px;
+      color: var(--text-main);
+    }
+
+    input[type="text"]:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.3);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: middle;
+      font-size: 13px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    th {
+      background: #f3f4f6;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
+      font-size: 12px;
+      color: var(--accent-blue);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .pill:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(148, 163, 184, 0.5);
+    }
+
+    .units-strong {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* INVENTORY ROW ANIMATION */
+    @keyframes rowFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    tbody tr {
+      opacity: 0;
+      transform: translateY(10px);
+      animation: rowFadeUp 0.4s ease-out forwards;
+    }
+
+    tbody tr:nth-child(1) { animation-delay: 0.02s; }
+    tbody tr:nth-child(2) { animation-delay: 0.05s; }
+    tbody tr:nth-child(3) { animation-delay: 0.08s; }
+    tbody tr:nth-child(4) { animation-delay: 0.11s; }
+    tbody tr:nth-child(5) { animation-delay: 0.14s; }
+    tbody tr:nth-child(6) { animation-delay: 0.17s; }
+    tbody tr:nth-child(7) { animation-delay: 0.20s; }
+    tbody tr:nth-child(8) { animation-delay: 0.23s; }
+    tbody tr:nth-child(9) { animation-delay: 0.26s; }
+    tbody tr:nth-child(10){ animation-delay: 0.29s; }
+
+    tbody tr:hover {
+      background: #eef3ff;
+      transition: background 0.15s ease;
+    }
+
+    /* INVENTORY CARD FADE-IN */
+    @keyframes cardFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* PRIMARY + SECONDARY BUTTONS (Apply / Reset) */
+    .btn-primary {
+      border-radius: 999px;
+      padding: 8px 18px;
+      border: none;
+      background: var(--accent-blue);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-blue-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-secondary {
+      border-radius: 999px;
+      padding: 8px 18px;
+      background: #ffffff;
+      border: 1px solid var(--accent-blue);
+      color: var(--accent-blue);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+    }
+
+    .btn-secondary:hover {
+      background: #eff6ff;
+      box-shadow: 0 8px 18px rgba(148, 163, 184, 0.4);
+      transform: translateY(-1px);
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+    @media (max-width: 1024px) {
+      .top-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        overflow: auto;
+      }
+      .main {
+        padding: 16px 14px 24px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div>
+        <div class="brand">
+          <div class="brand-logo">
+            <img src="{{ url_for('static', filename='images/hospital.png') }}" alt="Hospital logo">
+          </div>
+          <div>
+            <div class="app-name">BloodBridge</div>
+            <div class="org-name">{{ org.name }}</div>
+            <div class="org-location">{{ org.city }}, {{ org.state }}</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="nav-label">Navigation</div>
+          <div class="actions">
+            <a class="btn" href="{{ url_for('manage_inventory') }}">Manage Inventory</a>
+            <a class="btn" href="{{ url_for('view_requests') }}">View Requests</a>
+            {% if org.org_type == "Hospital" %}
+            <a class="btn" href="{{ url_for('new_request') }}">New Request</a>
+            {% elif org.org_type == "BloodBank" %}
+            <a class="btn" href="{{ url_for('new_blood_drive') }}">New Request</a>
+            {% endif %}
+            <a class="btn" href="{{ url_for('logout') }}">Logout</a>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+      <header class="main-header">
+        <div class="main-title">Inventory Overview</div>
+        <div class="main-subtitle">
+          Live view of your blood components and recent stock levels.
+        </div>
+      </header>
+
+      <!-- TOP SMALL CHARTS -->
+      <section class="top-row">
+
+        <!-- DOUGHNUT CARD -->
+        <article class="card">
+          <div class="card-header">
+            <div class="card-header-text">
+              <div class="card-title">Component Mix</div>
+              <div class="card-subtitle">Select blood type to filter components.</div>
+            </div>
+            <div class="chart-filter">
+              <select id="bloodTypeFilter">
+                <option value="ALL">All Types</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+              </select>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="componentChart"></canvas>
+          </div>
+        </article>
+
+        <!-- BAR CARD -->
+        <article class="card">
+          <div class="card-header">
+            <div class="card-header-text">
+              <div class="card-title">Usage Trend (Sample Data)</div>
+              <div class="card-subtitle">
+                Monthly totals — units requested vs sent to other hospitals.
+              </div>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="usageChart"></canvas>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- INVENTORY TABLE -->
+      <section class="card inventory-card">
+        <div class="inventory-header">Your Inventory</div>
+
+        <form method="get" class="filters">
+          <label>
+            Search
+            <input type="text" name="q" placeholder="Blood type / component"
+                   value="{{ (filters.q if filters else '') }}">
+          </label>
+          <label>
+            Blood Type
+            <select name="blood_type">
+              <option value="">Any</option>
+              {% for bt in ['O+','O-','A+','A-','B+','B-','AB+','AB-'] %}
+                <option value="{{ bt }}" {% if filters and filters.blood_type==bt %}selected{% endif %}>{{ bt }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Component
+            <select name="component">
+              <option value="">Any</option>
+              {% for c in ['RBC','PLASMA','PLATELETS','CRYO','WHOLE'] %}
+                <option value="{{ c }}" {% if filters and filters.component==c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <button class="btn-primary" type="submit">Apply</button>
+          <a class="btn-secondary" href="{{ url_for('dashboard') }}">Reset</a>
+        </form>
+
+        <table class="inventory-table">
+          <thead>
+            <tr>
+              <th>Blood Type</th>
+              <th>Component</th>
+              <th>Units</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for r in inventory %}
+            <tr>
+              <td><span class="pill">{{ r.blood_type }}</span></td>
+              <td><span class="pill">{{ r.component }}</span></td>
+              <td><span class="units-strong">{{ r.units }}</span></td>
+              <td>{{ r.updated_at or '—' }}</td>
+            </tr>
+          {% endfor %}
+          {% if not inventory %}
+            <tr>
+              <td colspan="4" style="color:var(--text-muted); padding-top:14px;">
+                No inventory matches your filters.
+              </td>
+            </tr>
+          {% endif %}
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <!-- CHARTS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  {# ---- (kept, though not required anymore) PRECOMPUTE TOTALS IN JINJA ---- #}
+  {% set ns = namespace(RBC=0, PLASMA=0, PLATELETS=0, CRYO=0, WHOLE=0) %}
+  {% for r in inventory %}
+    {% if r.component and r.units is not none %}
+      {% set comp = r.component|upper %}
+      {% if comp == 'RBC' %}
+        {% set ns.RBC = ns.RBC + r.units %}
+      {% elif comp == 'PLASMA' %}
+        {% set ns.PLASMA = ns.PLASMA + r.units %}
+      {% elif comp == 'PLATELETS' %}
+        {% set ns.PLATELETS = ns.PLATELETS + r.units %}
+      {% elif comp == 'CRYO' %}
+        {% set ns.CRYO = ns.CRYO + r.units %}
+      {% elif comp == 'WHOLE' %}
+        {% set ns.WHOLE = ns.WHOLE + r.units %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  <script>
+    // ---------- HELPER: compute totals from inventory for a given blood type ----------
+    const componentLabels = ["RBC", "PLASMA", "PLATELETS", "CRYO", "WHOLE"];
+
+    // Raw inventory rows from Flask (blood_type, component, units)
+    const inventoryRows = {{ inventory | tojson }};
+
+    function computeComponentTotals(bloodTypeFilter) {
+      const totals = {
+        RBC: 0,
+        PLASMA: 0,
+        PLATELETS: 0,
+        CRYO: 0,
+        WHOLE: 0
+      };
+
+      inventoryRows.forEach(row => {
+        const bt = (row.blood_type || "").toUpperCase();
+        const comp = (row.component || "").toUpperCase();
+        const units = Number(row.units) || 0;
+
+        if (bloodTypeFilter !== "ALL" && bt !== bloodTypeFilter) {
+          return;
+        }
+        if (totals.hasOwnProperty(comp)) {
+          totals[comp] += units;
+        }
+      });
+
+      return componentLabels.map(label => totals[label]);
+    }
+
+    // ---------- DOUGHNUT: COMPONENT MIX WITH DROPDOWN ----------
+    const doughnutCtx = document.getElementById("componentChart").getContext("2d");
+    const bloodTypeSelect = document.getElementById("bloodTypeFilter");
+
+    let currentFilter = "ALL";
+    let doughnutValues = computeComponentTotals(currentFilter);
+
+    const componentChart = new Chart(doughnutCtx, {
+      type: "doughnut",
+      data: {
+        labels: componentLabels,
+        datasets: [{
+          data: doughnutValues,
+          backgroundColor: [
+            "#bbf7d0", // light green
+            "#22c55e", // green
+            "#84cc16", // olive
+            "#3b82f6", // blue
+            "#1e3a8a"  // dark navy
+          ],
+          borderColor: "#ffffff",
+          borderWidth: 2,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 900,
+          easing: 'easeOutQuad'
+        },
+        plugins: {
+          legend: {
+            position: "right",
+            labels: {
+              color: "#0f172a",
+              usePointStyle: true,
+              pointStyle: "circle"
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const label = ctx.label || "";
+                const value = ctx.parsed || 0;
+                return `${label}: ${value} units`;
+              }
+            }
+          }
+        },
+        cutout: "65%"
+      }
+    });
+
+    bloodTypeSelect.addEventListener("change", () => {
+      currentFilter = bloodTypeSelect.value || "ALL";
+      const newData = computeComponentTotals(currentFilter);
+      componentChart.data.datasets[0].data = newData;
+      componentChart.update();
+    });
+
+    // ---------- BAR: SAMPLE MONTHLY USAGE ----------
+    const usageCtx = document.getElementById("usageChart").getContext("2d");
+
+    const months = ["Sept", "Oct", "Nov", "Dec"];
+    const unitsRequested = [340, 405, 395, 430]; // sample data
+    const unitsSent      = [295, 360, 350, 410]; // sample data
+
+    new Chart(usageCtx, {
+      type: "bar",
+      data: {
+        labels: months,
+        datasets: [
+          {
+            label: "Units Requested",
+            data: unitsRequested,
+            backgroundColor: "#3b82f6"
+          },
+          {
+            label: "Units Sent",
+            data: unitsSent,
+            backgroundColor: "#22c55e"
+          }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false,
+        animation: {
+          duration: 800,
+          easing: 'easeOutQuad'
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#6b7280" },
+            grid: { color: "#e5e7eb" },
+            title: {
+              display: true,
+              text: "Total Units",
+              color: "#6b7280",
+              font: { size: 11 }
+            }
+          },
+          x: {
+            ticks: { color: "#6b7280" },
+            grid: { display: false }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: { color: "#0f172a" }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                return `${ctx.dataset.label}: ${ctx.parsed.y} units`;
+              }
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

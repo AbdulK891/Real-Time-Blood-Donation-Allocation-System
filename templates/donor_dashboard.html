@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ donor.FirstName }} {{ donor.LastName }} • Donor Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      /* Light theme + purple/pink palette */
+      --bg: #f4f4fb;
+      --sidebar-gradient-start: #8a63ff;
+      --sidebar-gradient-end: #c1b5ff;
+      --card-bg: #ffffff;
+      --card-border: #e2e0ff;
+      --text-main: #1a1a1a;
+      --text-muted: #6e6e80;
+      --accent: #8a63ff;
+      --accent-soft: #f7f3ff;
+      --accent-pink: #ff9fae;
+      --accent-coral: #ff7a7a;
+      --badge-bg: #f0e9ff;
+
+      --table-header-bg: #f3f0ff;
+      --table-row-alt: #faf8ff;
+
+      --critical-bg: #ffe5e5;
+      --critical-text: #b91c1c;
+      --high-bg: #fff3c4;
+      --high-text: #92400e;
+
+      --btn-primary-bg: #8a63ff;
+      --btn-primary-text: #ffffff;
+      --btn-muted-bg: #f3f4ff;
+      --btn-muted-text: #4b5563;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      display: flex;
+    }
+
+    /* ---------- Layout ---------- */
+    .layout {
+      display: flex;
+      width: 100%;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, var(--sidebar-gradient-start), var(--sidebar-gradient-end));
+      color: #ffffff;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sidebar-top {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar-logo img {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      object-fit: cover;
+      background: #ffffff;
+      padding: 4px;
+    }
+
+    .sidebar-logo-title {
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 1.1;
+    }
+
+    .sidebar-logo-sub {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    .sidebar-donor {
+      background: rgba(15, 23, 42, 0.18);
+      border-radius: 14px;
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ↑ increased font sizes here */
+    .sidebar-donor-name {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .sidebar-donor-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      font-size: 14px;
+      opacity: 0.95;
+    }
+
+    .sidebar-donor-meta span.label {
+      font-weight: 600;
+    }
+
+    .sidebar-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .badge-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(15, 23, 42, 0.32);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-pill-blood {
+      background: rgba(248, 250, 252, 0.18);
+    }
+
+    .badge-pill-level {
+      background: rgba(15, 23, 42, 0.45);
+    }
+
+    .sidebar-bottom {
+      margin-top: 24px;
+    }
+
+    .btn-logout {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(15, 23, 42, 0.85);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-logout:hover {
+      background: rgba(15, 23, 42, 0.98);
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* ---------- Cards & Grid ---------- */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px 22px;
+      box-shadow: 0 14px 30px rgba(148, 117, 255, 0.10);
+    }
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.8fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 960px) {
+      .layout {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+      }
+      .sidebar-bottom {
+        margin-top: 0;
+      }
+      .main {
+        padding: 16px;
+      }
+      .top-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    h2, h3 { margin: 0; }
+
+    h3 {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .muted {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* ---------- Gauge + Recommendation ---------- */
+    .readiness-wrapper {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .gauge {
+      position: relative;
+      width: 150px;
+      aspect-ratio: 1 / 1;
+      flex-shrink: 0;
+    }
+
+    .gauge-ring {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background:
+        conic-gradient(
+          var(--accent) calc((var(--value, 0) * 1%)),
+          #e5e0ff 0
+        );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gauge-ring::before {
+      content: "";
+      width: 72%;
+      height: 72%;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: inset 0 0 0 1px #ece8ff;
+    }
+
+    /* center fix */
+    .gauge-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .gauge-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .gauge-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .readiness-text {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .readiness-status {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .readiness-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .recovery-bar {
+      margin-top: 8px;
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      overflow: hidden;
+    }
+
+    .recovery-bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-pink));
+      width: var(--recovered, 0%);
+      transition: width 0.4s ease;
+    }
+
+    /* ---------- Personalized Recommendation ---------- */
+    .recommendation-card {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      border: 1px solid #e3ddff;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .recommendation-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .recommendation-main {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .recommendation-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ---------- Quick Stats ---------- */
+    .stats-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat-item {
+      padding: 10px 10px;
+      border-radius: 12px;
+      background: #faf8ff;
+      border: 1px solid #ece8ff;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .stat-note {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .donor-level-chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--badge-bg);
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ---------- Requests Table ---------- */
+    .requests-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .requests-card-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .requests-card-header .muted {
+      font-size: 12px;
+    }
+
+    input[type="text"] {
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--card-border);
+      background: #ffffff;
+      color: var(--text-main);
+      font-size: 13px;
+      min-width: 220px;
+    }
+
+    input[type="text"]::placeholder {
+      color: #9ca3af;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+
+    thead tr {
+      background: var(--table-header-bg);
+    }
+
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #ece8ff;
+    }
+
+    th {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--table-row-alt);
+    }
+
+    .tag {
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .tag-blood {
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    .tag-component {
+      background: #e0f2fe;
+      color: #075985;
+    }
+
+    .tag-critical {
+      background: var(--critical-bg);
+      color: var(--critical-text);
+    }
+
+    .tag-high {
+      background: var(--high-bg);
+      color: var(--high-text);
+    }
+
+    .tag-default {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .btn-table {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-accept {
+      background: #22c55e;
+      color: #ffffff;
+    }
+
+    .btn-accept:hover { filter: brightness(1.05); }
+
+    .btn-reject {
+      background: var(--btn-muted-bg);
+      color: var(--btn-muted-text);
+      margin-left: 6px;
+    }
+
+    .btn-reject:hover { filter: brightness(0.97); }
+
+    .request-location {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-logo">
+          <img src="{{ url_for('static', filename='images/donor.png') }}" alt="Donor Logo">
+          <div>
+            <div class="sidebar-logo-title">BloodBridge Donor</div>
+            <div class="sidebar-logo-sub">Connected to nearby hospitals</div>
+          </div>
+        </div>
+
+        <div class="sidebar-donor">
+          <div class="sidebar-donor-name">
+            {{ donor.FirstName }} {{ donor.LastName }}
+          </div>
+          <div class="sidebar-donor-meta">
+            <div><span class="label">Blood Type:</span> {{ donor.BloodType }}</div>
+            <div><span class="label">Age:</span> {{ donor.Age }}</div>
+            <div><span class="label">Gender:</span> {{ donor.Gender }}</div>
+            <div><span class="label">Location:</span> {{ donor.City }}, {{ donor.State }}</div>
+          </div>
+          <div class="sidebar-badges">
+            <span class="badge-pill badge-pill-blood">🩸 {{ donor.BloodType }}</span>
+            <span class="badge-pill badge-pill-level">
+              {% if donor.Level == 1 %}
+                LEVEL 1 • EMERGENCY ONLY
+              {% elif donor.Level == 2 %}
+                LEVEL 2 • BLOOD DRIVE
+              {% else %}
+                LEVEL 3 • BOTH
+              {% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-bottom">
+        <a href="{{ url_for('logout') }}">
+          <button class="btn-logout" type="button">Logout</button>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+      <div>
+        <div class="page-title">Donor Dashboard</div>
+        <div class="page-subtitle">Track your readiness, see impact, and respond to live requests.</div>
+      </div>
+
+      <!-- Compute readiness & days_left using formula (Option A) -->
+      {% set total_don = donor.total_donations or 0 %}
+      {% if total_don == 0 %}
+        {% set readiness = 100 %}
+        {% set days_left = 0 %}
+      {% else %}
+        {% set days_since = donor.days_since_last_donation or 0 %}
+        {% set readiness = (days_since * 100 // 7) %}
+        {% if readiness > 100 %}
+          {% set readiness = 100 %}
+        {% elif readiness < 0 %}
+          {% set readiness = 0 %}
+        {% endif %}
+        {% if days_since >= 7 %}
+          {% set days_left = 0 %}
+        {% else %}
+          {% set days_left = 7 - days_since %}
+        {% endif %}
+      {% endif %}
+      {% set recovered = (7 - days_left) * 100 // 7 if days_left > 0 else 100 %}
+
+      <!-- TOP GRID -->
+      <div class="top-grid">
+        <!-- Left: Readiness + Recommendation -->
+        <section class="card">
+          <h3>Donation Readiness</h3>
+          <p class="muted" style="margin-top:4px;">We estimate how ready your body is for your next safe donation.</p>
+
+          <div class="readiness-wrapper">
+            <div class="gauge" data-readiness="{{ readiness }}">
+              <div class="gauge-ring" style="--value: 0;">
+              </div>
+              <div class="gauge-center">
+                <div class="gauge-value">0%</div>
+                <div class="gauge-label">Ready to donate</div>
+              </div>
+            </div>
+
+            <div class="readiness-text">
+              {% if days_left > 0 %}
+                <div class="readiness-status">
+                  Recovering — {{ days_left }} day{% if days_left != 1 %}s{% endif %} to go
+                </div>
+                <div class="readiness-meta">
+                  Last donation: {{ donor.last_donation_date or "N/A" }}<br>
+                  We’ll notify you as soon as you’re fully eligible again.
+                </div>
+              {% else %}
+                <div class="readiness-status">
+                  You’re fully eligible to donate now 🎉
+                </div>
+                <div class="readiness-meta">
+                  High demand for {{ donor.BloodType }} in your area — your next donation can help multiple patients.
+                </div>
+              {% endif %}
+
+              <div class="recovery-bar">
+                <div class="recovery-bar-fill" style="--recovered: {{ recovered }}%;"></div>
+              </div>
+
+              <div class="recommendation-card">
+                <div class="recommendation-title">Personalized Recommendation</div>
+                {% if days_left > 0 %}
+                  <div class="recommendation-main">
+                    You can donate again in <strong>{{ days_left }}</strong> day{% if days_left != 1 %}s{% endif %}.
+                  </div>
+                  <div class="recommendation-meta">
+                    Rest, hydrate well, and avoid heavy exertion while your body replenishes.
+                  </div>
+                {% else %}
+                  <div class="recommendation-main">
+                    You are clear to give a new donation now.
+                  </div>
+                  <div class="recommendation-meta">
+                    Whole blood or RBC donation is ideal for {{ donor.BloodType }} donors during high-demand periods.
+                  </div>
+                  <!-- schedule button removed on purpose -->
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right: Donor Quick Stats -->
+        <section class="card">
+          <div class="stats-header">
+            <div>
+              <h3>Donor Profile &amp; Impact</h3>
+              <p class="muted" style="margin-top:4px;">See how your donations add up over time.</p>
+            </div>
+            <span class="donor-level-chip">
+              {% if donor.Level == 1 %}
+                Level 1 • Emergency Donor
+              {% elif donor.Level == 2 %}
+                Level 2 • Active Donor
+              {% else %}
+                Level 3 • Power Donor
+              {% endif %}
+            </span>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-label">Total Donations</div>
+              <div class="stat-value">{{ donor.total_donations or 0 }}</div>
+              <div class="stat-note">Across all centers linked to BloodBridge.</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Lives Impacted</div>
+              <div class="stat-value">{{ donor.lives_impacted or 0 }}</div>
+              <div class="stat-note">Estimated based on units and components donated.</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Last Donation</div>
+              <div class="stat-value">{{ donor.last_donation_date or "N/A" }}</div>
+              <div class="stat-note">Thank you for showing up when it mattered.</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Preferred Center</div>
+              <div class="stat-value">{{ donor.preferred_center or "None" }}</div>
+              <div class="stat-note">We’ll prioritize appointments at this location.</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Requests Table -->
+      <section class="card">
+        <div class="requests-card-header">
+          <div>
+            <h3>Requests (Hospitals &amp; Blood Banks)</h3>
+            <div class="muted">These are compatible or nearby requests that may match your profile.</div>
+          </div>
+          <input type="text" id="search" placeholder="Filter by name, city, or level...">
+        </div>
+
+        <table id="requests">
+          <thead>
+            <tr>
+              <th>Requester</th>
+              <th>Type</th>
+              <th>Blood Type</th>
+              <th>Component</th>
+              <th>Units</th>
+              <th>Level</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in requests_rows %}
+            <tr>
+              <td>
+                <div>{{ r.name }}</div>
+                <div class="request-location">{{ r.city }}, {{ r.state }}</div>
+              </td>
+              <td>{{ r.org_type }}</td>
+              <!-- always donor blood type + Whole -->
+              <td>
+                <span class="tag tag-blood">{{ donor.BloodType }}</span>
+              </td>
+              <td>
+                <span class="tag tag-component">Whole</span>
+              </td>
+              <td>{{ r.units }}</td>
+              <td>
+                {% if r.level == 'CRITICAL' %}
+                  <span class="tag tag-critical">CRITICAL</span>
+                {% elif r.level == 'HIGH' %}
+                  <span class="tag tag-high">HIGH</span>
+                {% else %}
+                  <span class="tag tag-default">{{ r.level }}</span>
+                {% endif %}
+              </td>
+              <td>{{ r.status }}</td>
+              <td>
+                <form action="{{ url_for('donor_accept_request', request_id=r.request_id) }}" method="POST" style="display:inline;">
+                  <button class="btn-table btn-accept" type="submit">Accept</button>
+                </form>
+                <form action="{{ url_for('donor_reject_request', request_id=r.request_id) }}" method="POST" style="display:inline;">
+                  <button class="btn-table btn-reject" type="submit">Reject</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="8" style="text-align:center; padding:18px 0;" class="muted">
+                No requests available at this time.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Search filter (unchanged)
+    const input = document.getElementById('search');
+    if (input) {
+      input.addEventListener('input', () => {
+        const q = input.value.toLowerCase();
+        document.querySelectorAll('#requests tbody tr').forEach(tr => {
+          tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none';
+        });
+      });
+    }
+
+    // Animated gauge from 0 -> readiness
+    document.addEventListener('DOMContentLoaded', () => {
+      const gauge = document.querySelector('.gauge');
+      if (!gauge) return;
+
+      const target = parseInt(gauge.dataset.readiness || '0', 10);
+      const ring = gauge.querySelector('.gauge-ring');
+      const valueEl = gauge.querySelector('.gauge-value');
+      if (!ring || !valueEl) return;
+
+      let start = null;
+      const duration = 1200; // ms
+
+      function animate(timestamp) {
+        if (!start) start = timestamp;
+        const progress = Math.min(1, (timestamp - start) / duration);
+        const current = Math.round(progress * target);
+
+        ring.style.setProperty('--value', current);
+        valueEl.textContent = current + '%';
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    });
+  </script>
+</body>
+</html>

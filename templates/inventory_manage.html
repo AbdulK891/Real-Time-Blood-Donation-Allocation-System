@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Inventory</title>
+
+  <style>
+    :root {
+      --bg: #f4f7ff;
+      --card: #ffffff;
+      --blue-soft: #e8f0ff;
+      --blue-border: #c7d9ff;
+      --text-main: #1b2540;
+      --text-sub: #667497;
+      --btn-blue: #4476ff;
+      --btn-blue-hover: #2558e6;
+    }
+
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system;
+      background: var(--bg);
+      color: var(--text-main);
+      padding: 30px;
+      margin: 0;
+    }
+
+    h2 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    h3 {
+      margin-top: 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    a {
+      color: var(--btn-blue);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* MAIN CARD */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--blue-border);
+      border-radius: 16px;
+      padding: 22px;
+      margin-top: 30px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    }
+
+    /* INVENTORY TABLE CARD (light blue) */
+    .inventory-card {
+      background: var(--blue-soft);
+      border: 1px solid var(--blue-border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--blue-border);
+      text-align: left;
+      vertical-align: middle;
+      font-size: 15px;
+    }
+
+    th {
+      color: var(--text-sub);
+      text-transform: uppercase;
+      font-size: 13px;
+      letter-spacing: .5px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 5px 12px;
+      background: #dce6ff;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #2a3f8d;
+    }
+
+    .right {
+      text-align: right;
+      font-weight: 600;
+    }
+
+    /* BUTTONS */
+    .btn {
+      background: var(--btn-blue);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 0;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .btn:hover {
+      background: var(--btn-blue-hover);
+    }
+
+    input, select {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--blue-border);
+      background: white;
+      font-size: 15px;
+      width: 100%;
+    }
+
+    /* ADD NEW ITEM LIGHT BLUE BOX */
+    .add-box {
+      background: var(--blue-soft);
+      border: 1px solid var(--blue-border);
+      padding: 24px;
+      border-radius: 16px;
+      margin-top: 30px;
+    }
+
+    /* Add form vertical layout */
+    .add-form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      max-width: 340px;
+    }
+
+    .add-form label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .add-btn {
+      align-self: flex-start;
+      margin-top: 8px;
+      padding: 10px 24px;
+      border-radius: 12px;
+      font-size: 15px;
+    }
+
+    /* FLASH MESSAGE */
+    .flash {
+      background: #e4ebff;
+      border: 1px solid #bcccff;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .flash strong {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #45507a;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- PAGE TITLE -->
+  <h2>Manage Inventory — {{ org }}</h2>
+  <p>
+    <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+  </p>
+
+  <!-- FLASH MESSAGES -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div style="margin-top: 10px;">
+        {% for category, msg in messages %}
+          <div class="flash">
+            <strong>{{ category }}</strong>
+            <div>{{ msg }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- INVENTORY TABLE -->
+  <div class="card inventory-card">
+    <h3>Your Inventory</h3>
+
+    <table>
+      <tr>
+        <th>Blood Type</th>
+        <th>Component</th>
+        <th class="right">Units</th>
+        <th>Updated</th>
+        <th>Actions</th>
+      </tr>
+
+      {% for r in inventory %}
+      <tr>
+        <td><span class="pill">{{ r.blood_type }}</span></td>
+        <td><span class="pill">{{ r.component }}</span></td>
+        <td class="right">{{ r.units }}</td>
+        <td>{{ r.updated_at or '—' }}</td>
+
+        <td>
+
+          <!-- SET -->
+          <form style="display:inline" method="post" action="{{ url_for('update_inventory') }}">
+            <input type="hidden" name="blood_type" value="{{ r.blood_type }}">
+            <input type="hidden" name="component" value="{{ r.component }}">
+            <input type="hidden" name="action" value="set">
+            <input type="number" name="units" min="0" placeholder="{{ r.units }}" style="width:80px;">
+            <button class="btn" type="submit">Set</button>
+          </form>
+
+          <!-- ADD -->
+          <form style="display:inline" method="post" action="{{ url_for('update_inventory') }}">
+            <input type="hidden" name="blood_type" value="{{ r.blood_type }}">
+            <input type="hidden" name="component" value="{{ r.component }}">
+            <input type="hidden" name="action" value="add">
+            <input type="number" name="units" min="1" placeholder="+" style="width:70px;">
+            <button class="btn" type="submit">Add</button>
+          </form>
+
+          <!-- REMOVE -->
+          <form style="display:inline" method="post" action="{{ url_for('update_inventory') }}">
+            <input type="hidden" name="blood_type" value="{{ r.blood_type }}">
+            <input type="hidden" name="component" value="{{ r.component }}">
+            <input type="hidden" name="action" value="remove">
+            <input type="number" name="units" min="1" placeholder="-" style="width:70px;">
+            <button class="btn" type="submit">Remove</button>
+          </form>
+
+          <!-- DELETE ROW -->
+          <form style="display:inline" method="post" action="{{ url_for('update_inventory') }}"
+                onsubmit="return confirm('Delete this entry?');">
+            <input type="hidden" name="blood_type" value="{{ r.blood_type }}">
+            <input type="hidden" name="component" value="{{ r.component }}">
+            <input type="hidden" name="action" value="delete">
+            <button class="btn" type="submit">Delete</button>
+          </form>
+
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <!-- ADD NEW ITEM -->
+  <div class="add-box">
+    <h3>Add New Item</h3>
+
+    <form method="post" action="{{ url_for('update_inventory') }}" class="add-form">
+      <input type="hidden" name="action" value="add">
+
+      <label>
+        Blood Type
+        <input type="text" name="blood_type" placeholder="O+" required>
+      </label>
+
+      <label>
+        Component
+        <input type="text" name="component" placeholder="RBC / WHOLE / PLATELETS" required>
+      </label>
+
+      <label>
+        Units
+        <input type="number" name="units" min="1" placeholder="10" required>
+      </label>
+
+      <button class="btn add-btn" type="submit">Add</button>
+    </form>
+  </div>
+
+</body>
+</html>
